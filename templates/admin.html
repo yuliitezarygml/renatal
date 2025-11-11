@@ -176,6 +176,12 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="defect-reports-tab" data-bs-toggle="tab" data-bs-target="#defect-reports" type="button" role="tab">
+                    <i class="fas fa-file-alt"></i> 📋 Мои отчеты
+                    <span class="badge bg-info" id="defectReportsCount">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
                     <i class="fas fa-cog"></i> Настройки
                 </button>
@@ -983,78 +989,196 @@
                     </div>
                 </div>
 
-                <!-- Добавление транзакции -->
+                <!-- Добавление оценки клиента - РАСШИРЕННАЯ ФОРМА -->
                 <div class="card mt-3">
-                    <div class="card-header">
-                        <h5><i class="fas fa-plus-circle"></i> Добавить оценку клиента</h5>
+                    <div class="card-header bg-primary text-white">
+                        <h5><i class="fas fa-star"></i> Добавить оценку клиента</h5>
+                        <small>Подробное заполнение со всеми параметрами дефектов</small>
                     </div>
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
+                        <!-- ОСНОВНАЯ ИНФОРМАЦИЯ -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-primary border-bottom pb-2">📋 Основная информация</h6>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label class="form-label">Выберите пользователя:</label>
+                                    <label class="form-label"><strong>👤 Пользователь <span class="text-danger">*</span></strong></label>
                                     <div class="input-group">
                                         <select class="form-control" id="ratingUserId">
                                             <option value="">Выберите пользователя...</option>
-                                            <!-- Загружается динамически -->
                                         </select>
-                                        <button class="btn btn-outline-secondary" type="button" onclick="forceReloadUsers()" title="Обновить список пользователей">
-                                            🔄
-                                        </button>
-                                        <button class="btn btn-outline-primary" type="button" onclick="forceLoadUsersForRating()" title="Обновить список пользователей">
+                                        <button class="btn btn-outline-primary" type="button" onclick="forceLoadUsersForRating()">
                                             <i class="fas fa-sync-alt"></i>
                                         </button>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label class="form-label">ID аренды (необязательно):</label>
-                                    <input type="text" class="form-control" id="ratingRentalId" placeholder="Привязать к конкретной аренде">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Возврат оборудования:</label>
-                                    <select class="form-control" id="returnTiming">
-                                        <option value="on_time">Вовремя (+10)</option>
-                                        <option value="late_1_24h">Опоздание 1-24ч (-20)</option>
-                                        <option value="late_over_24h">Опоздание >24ч (-30)</option>
-                                    </select>
+                                    <label class="form-label"><strong>🎮 ID консоли/Аренды</strong></label>
+                                    <input type="text" class="form-control" id="ratingRentalId" placeholder="Опциональное указание">
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label class="form-label">Состояние имущества:</label>
-                                    <select class="form-control" id="itemCondition" onchange="updateDefectPhotoSection()">
-                                        <option value="perfect">✅ Идеально (+10)</option>
-                                        <option value="minor_defects">⚠️ Небольшие дефекты (-15)</option>
-                                        <option value="major_defects">❌ Существенные дефекты (-30)</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3" id="defectPhotoSection" style="display: none;">
-                                    <label class="form-label">📸 Фотография дефекта:</label>
-                                    <div class="input-group">
-                                        <input type="file" class="form-control" id="defectPhotoInput" accept="image/*" onchange="previewDefectPhoto(this)">
-                                        <button class="btn btn-outline-info" type="button" onclick="document.getElementById('defectPhotoInput').click()">
-                                            <i class="fas fa-camera"></i> Выбрать
-                                        </button>
-                                    </div>
-                                    <div id="defectPhotoPreview" style="margin-top: 10px;"></div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Соблюдение правил:</label>
-                                    <select class="form-control" id="ruleCompliance">
-                                        <option value="no_violations">✅ Без нарушений (0)</option>
-                                        <option value="minor_violation">⚠️ Единичное нарушение (-15)</option>
-                                        <option value="major_violation">❌ Грубое нарушение (-30)</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">📝 Комментарий:</label>
-                                    <textarea class="form-control" id="ratingNotes" rows="4" placeholder="Подробное описание состояния имущества, характер дефектов, выполнены ли правила..."></textarea>
+                                    <label class="form-label"><strong>📅 Дата оценки</strong></label>
+                                    <input type="date" class="form-control" id="ratingDate" value="">
                                 </div>
                             </div>
                         </div>
-                        <button class="btn btn-success" onclick="addRatingTransaction()">
-                            <i class="fas fa-save"></i> Сохранить оценку
-                        </button>
+
+                        <!-- ВРЕМЯ ВОЗВРАТА -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-primary border-bottom pb-2">⏰ Время возврата оборудования</h6>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="returnTiming" id="timing_on_time" value="on_time" checked>
+                                    <label class="btn btn-outline-success" for="timing_on_time">
+                                        <i class="fas fa-check-circle"></i> Вовремя <span class="badge bg-success">+10</span>
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="returnTiming" id="timing_late_1_24h" value="late_1_24h">
+                                    <label class="btn btn-outline-warning" for="timing_late_1_24h">
+                                        <i class="fas fa-clock"></i> Опоздание 1-24ч <span class="badge bg-warning">-20</span>
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="returnTiming" id="timing_late_over_24h" value="late_over_24h">
+                                    <label class="btn btn-outline-danger" for="timing_late_over_24h">
+                                        <i class="fas fa-exclamation-circle"></i> Опоздание >24ч <span class="badge bg-danger">-30</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- СОСТОЯНИЕ ИМУЩЕСТВА -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-primary border-bottom pb-2">🛠️ Состояние имущества</h6>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="itemCondition" id="condition_perfect" value="perfect" checked onchange="updateDefectPhotoSection()">
+                                    <label class="btn btn-outline-success" for="condition_perfect">
+                                        <i class="fas fa-check-circle"></i> Идеально <span class="badge bg-success">+10</span>
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="itemCondition" id="condition_minor" value="minor_defects" onchange="updateDefectPhotoSection()">
+                                    <label class="btn btn-outline-warning" for="condition_minor">
+                                        <i class="fas fa-exclamation-triangle"></i> Небольшие дефекты <span class="badge bg-warning">-15</span>
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="itemCondition" id="condition_major" value="major_defects" onchange="updateDefectPhotoSection()">
+                                    <label class="btn btn-outline-danger" for="condition_major">
+                                        <i class="fas fa-times-circle"></i> Серьёзные дефекты <span class="badge bg-danger">-30</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ПАРАМЕТРЫ ДЕФЕКТОВ (ДИНАМИЧЕСКИЕ) -->
+                        <div id="defectsParametersSection" style="display: none;" class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-danger border-bottom pb-2">🔍 Параметры дефектов</h6>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <div id="defectsChecklistContainer" style="max-height: 300px; overflow-y: auto;">
+                                            <!-- Загружается динамически -->
+                                        </div>
+                                        <hr>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" id="customDefectInput" placeholder="Добавить собственный параметр дефекта...">
+                                            <button class="btn btn-outline-info" type="button" onclick="addCustomDefect()">
+                                                <i class="fas fa-plus"></i> Добавить
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ЗАГРУЗКА ФОТОГРАФИЙ -->
+                        <div id="defectPhotoSection" style="display: none;" class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-info border-bottom pb-2">📸 Фотографии дефектов</h6>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <button type="button" class="btn btn-lg btn-info w-100 mb-3" onclick="openDefectPhotoModal()">
+                                            <i class="fas fa-camera"></i> Открыть полноэкранный загрузчик дефектов
+                                        </button>
+                                        <div class="input-group mb-3">
+                                            <input type="file" class="form-control" id="defectPhotoInput" accept="image/*" onchange="previewDefectPhoto(this)" multiple>
+                                            <button class="btn btn-outline-info" type="button" onclick="document.getElementById('defectPhotoInput').click()">
+                                                <i class="fas fa-camera"></i> Или выбрать фото быстро
+                                            </button>
+                                        </div>
+                                        <div id="defectPhotoPreview" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+                                        <small class="text-muted">Загружено фотографий: <strong id="uploadedPhotosCount">0</strong></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- СОБЛЮДЕНИЕ ПРАВИЛ -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-primary border-bottom pb-2">📜 Соблюдение правил</h6>
+                            </div>
+                            <div class="col-md-12">
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="ruleCompliance" id="compliance_no" value="no_violations" checked>
+                                    <label class="btn btn-outline-success" for="compliance_no">
+                                        <i class="fas fa-check-circle"></i> Без нарушений <span class="badge bg-success">0</span>
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="ruleCompliance" id="compliance_minor" value="minor_violation">
+                                    <label class="btn btn-outline-warning" for="compliance_minor">
+                                        <i class="fas fa-exclamation-triangle"></i> Единичное нарушение <span class="badge bg-warning">-15</span>
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="ruleCompliance" id="compliance_major" value="major_violation">
+                                    <label class="btn btn-outline-danger" for="compliance_major">
+                                        <i class="fas fa-times-circle"></i> Грубое нарушение <span class="badge bg-danger">-30</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- КНОПКА ЗАГРУЗКИ ДЕФЕКТОВ -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <button type="button" class="btn btn-danger btn-lg w-100" onclick="openDefectPhotoModal()" title="Открыть полноэкранный интерфейс для загрузки фотографий дефектов и их подробного описания">
+                                    <i class="fas fa-camera"></i> 📸 Открыть полноэкранный загрузчик дефектов
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ПОДРОБНЫЙ КОММЕНТАРИЙ -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h6 class="text-primary border-bottom pb-2">📝 Подробный комментарий</h6>
+                                <textarea class="form-control" id="ratingNotes" rows="5" placeholder="Подробное описание:&#10;- Состояние оборудования&#10;- Описание дефектов и их расположение&#10;- Выполнение правил пользования&#10;- Прочие замечания..."></textarea>
+                                <small class="text-muted">Рекомендуется максимально подробно описать все обнаруженные проблемы</small>
+                            </div>
+                        </div>
+
+                        <!-- КНОПКИ ДЕЙСТВИЯ -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button class="btn btn-success btn-lg w-100" onclick="addRatingTransaction()">
+                                    <i class="fas fa-save"></i> Сохранить оценку клиента
+                                </button>
+                                <button class="btn btn-secondary mt-2 w-100" onclick="resetRatingForm()">
+                                    <i class="fas fa-redo"></i> Очистить форму
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1144,20 +1268,44 @@
                     <div class="tab-pane fade" id="history-inner" role="tabpanel">
                         <!-- История рейтингов пользователей -->
                         <div class="card mt-3">
-                            <div class="card-header">
-                                <h5><i class="fas fa-history"></i> История рейтингов пользователей</h5>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span>Детальная история всех транзакций и оценок</span>
-                                    <button class="btn btn-primary btn-sm" onclick="loadRatingHistory()">
+                            <div class="card-header bg-info text-white">
+                                <h5><i class="fas fa-history"></i> История рейтингов с дефектами</h5>
+                                <small>Детальная история всех транзакций, оценок и фотографий дефектов</small>
+                                <div class="mt-2">
+                                    <button class="btn btn-light btn-sm" onclick="loadRatingHistory()">
                                         <i class="fas fa-sync"></i> Обновить
                                     </button>
+                                    <button class="btn btn-light btn-sm" onclick="exportRatingHistory()">
+                                        <i class="fas fa-download"></i> Экспорт
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="ratingHistoryContainer" style="max-height: 800px; overflow-y: auto;">
+                                    <!-- Загружается динамически -->
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <div id="ratingHistoryContainer">
-                            <!-- Загружается динамически -->
+                </div>
+            </div>
+
+            <!-- Вкладка МОИ ОТЧЕТЫ ДЕФЕКТОВ -->
+            <div class="tab-pane fade" id="defect-reports" role="tabpanel">
+                <div class="container-fluid mt-4">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-file-alt"></i> Мои загруженные отчеты о дефектах
+                            </h5>
+                            <small>Все отчеты, которые вы заполнили при загрузке фотографий</small>
                         </div>
-                    </div>
+                        <div class="card-body">
+                            <div id="myDefectReportsList">
+                                <div class="alert alert-info text-center">
+                                    <i class="fas fa-inbox"></i> Отчетов не найдено
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3638,72 +3786,165 @@ function removeHoliday(date) {
     });
 }
 
-// ===== СИСТЕМА РЕЙТИНГОВ =====
-
-// Переменная для хранения пути загруженной фотографии
+// Переменная для хранения пути загруженной фотографии и пользовательских дефектов
 let uploadedDefectPhotos = [];
+let customDefects = [];
+let defectReports = []; // Хранилище всех отчетов о дефектах
 
-// Функция для отображения/скрытия секции загрузки фотографий
+let defaultDefects = [
+    'Царапины на корпусе',
+    'Трещины на экране/корпусе',
+    'Неработающие кнопки',
+    'Проблемы с контактами',
+    'Разбитые порты',
+    'Неработающий звук',
+    'Проблемы с питанием',
+    'Перегрев',
+    'Попадание жидкости',
+    'Отсутствующие детали'
+];
+
+// Функция для отображения/скрытия секции загрузки фотографий и параметров
 function updateDefectPhotoSection() {
-    const itemCondition = document.getElementById('itemCondition').value;
+    const itemCondition = document.getElementByName('itemCondition')[0]?.checked ? 
+        document.querySelector('input[name="itemCondition"]:checked').value : 
+        document.getElementById('condition_perfect').value;
+    
     const photoSection = document.getElementById('defectPhotoSection');
+    const parametersSection = document.getElementById('defectsParametersSection');
     
     if (itemCondition !== 'perfect') {
         photoSection.style.display = 'block';
+        parametersSection.style.display = 'block';
+        loadDefectParameters();
     } else {
         photoSection.style.display = 'none';
+        parametersSection.style.display = 'none';
         uploadedDefectPhotos = [];
         document.getElementById('defectPhotoPreview').innerHTML = '';
     }
 }
 
-// Функция предпросмотра фотографии дефекта
+// Функция загрузки параметров дефектов
+function loadDefectParameters() {
+    const container = document.getElementById('defectsChecklistContainer');
+    let html = '';
+    
+    // Показываем стандартные дефекты
+    defaultDefects.forEach((defect, index) => {
+        html += `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="defect_${index}" value="${defect}" data-type="default">
+                <label class="form-check-label" for="defect_${index}">
+                    ${defect}
+                </label>
+            </div>
+        `;
+    });
+    
+    // Показываем пользовательские дефекты
+    customDefects.forEach((defect, index) => {
+        const customIndex = defaultDefects.length + index;
+        html += `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="defect_${customIndex}" value="${defect}" data-type="custom">
+                <label class="form-check-label" for="defect_${customIndex}">
+                    <span class="badge bg-info">Собственный</span> ${defect}
+                    <button type="button" class="btn btn-sm btn-close" onclick="removeCustomDefect('${defect}')" style="display: inline-block; width: auto; height: auto; font-size: 0.75rem;"></button>
+                </label>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html || '<p class="text-muted">Нет доступных параметров</p>';
+}
+
+// Функция добавления собственного параметра дефекта
+function addCustomDefect() {
+    const input = document.getElementById('customDefectInput');
+    const value = input.value.trim();
+    
+    if (!value) {
+        showNotification('⚠️ Введите параметр дефекта', 'warning');
+        return;
+    }
+    
+    if (customDefects.includes(value)) {
+        showNotification('⚠️ Этот параметр уже добавлен', 'warning');
+        return;
+    }
+    
+    customDefects.push(value);
+    input.value = '';
+    loadDefectParameters();
+    showNotification('✅ Параметр добавлен', 'success');
+}
+
+// Функция удаления собственного параметра дефекта
+function removeCustomDefect(defect) {
+    customDefects = customDefects.filter(d => d !== defect);
+    loadDefectParameters();
+    showNotification('✅ Параметр удалён', 'success');
+}
+
+// Функция предпросмотра фотографий дефектов
 function previewDefectPhoto(input) {
     const preview = document.getElementById('defectPhotoPreview');
-    preview.innerHTML = '';
     
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            const preview_html = `
-                <div class="card">
-                    <div class="card-body" style="padding: 10px;">
-                        <img src="${e.target.result}" style="max-width: 100%; max-height: 300px; border-radius: 5px;">
-                        <div class="mt-2">
-                            <small class="text-muted">${file.name} (${(file.size / 1024).toFixed(2)} KB)</small>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-success mt-2" onclick="uploadDefectPhoto('${file.name}')">
-                            <i class="fas fa-upload"></i> Загрузить на сервер
+    if (input.files && input.files.length > 0) {
+        Array.from(input.files).forEach((file, fileIndex) => {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const photoCard = document.createElement('div');
+                photoCard.className = 'card';
+                photoCard.style.width = '150px';
+                photoCard.innerHTML = `
+                    <img src="${e.target.result}" style="height: 120px; object-fit: cover; border-radius: 5px 5px 0 0;">
+                    <div class="card-body p-2" style="font-size: 0.75rem;">
+                        <small class="text-truncate d-block">${file.name}</small>
+                        <small class="text-muted">${(file.size / 1024).toFixed(1)} KB</small>
+                        <button type="button" class="btn btn-sm btn-success mt-2 w-100" onclick="uploadDefectPhoto(this)">
+                            <i class="fas fa-upload"></i> Загр.
                         </button>
                     </div>
-                </div>
-            `;
-            preview.innerHTML = preview_html;
-        };
-        
-        reader.readAsDataURL(file);
+                `;
+                preview.appendChild(photoCard);
+            };
+            
+            reader.readAsDataURL(file);
+        });
     }
 }
 
 // Функция загрузки фотографии дефекта на сервер
-function uploadDefectPhoto(fileName) {
+function uploadDefectPhoto(button) {
     const input = document.getElementById('defectPhotoInput');
     const rentalId = document.getElementById('ratingRentalId').value || 'unknown';
+    const files = Array.from(input.files);
     
-    if (!input.files[0]) {
+    if (files.length === 0) {
         showNotification('⚠️ Выберите файл для загрузки', 'warning');
         return;
     }
     
+    // Находим индекс файла
+    const preview = document.getElementById('defectPhotoPreview');
+    const cards = preview.querySelectorAll('.card');
+    const cardIndex = Array.from(cards).indexOf(button.closest('.card'));
+    
+    if (cardIndex === -1 || cardIndex >= files.length) {
+        showNotification('❌ Не удалось определить файл', 'error');
+        return;
+    }
+    
+    const file = files[cardIndex];
     const formData = new FormData();
-    formData.append('photo', input.files[0]);
+    formData.append('photo', file);
     formData.append('rental_id', rentalId);
     
-    // Показываем прогресс загрузки
-    const preview = document.getElementById('defectPhotoPreview');
-    preview.innerHTML = '<div class="alert alert-info">⏳ Загружаем фотографию...</div>';
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     fetch('/api/upload-defect-photo', {
         method: 'POST',
@@ -3717,34 +3958,96 @@ function uploadDefectPhoto(fileName) {
                 filename: data.filename
             });
             
-            showNotification('✅ Фотография успешно загружена!', 'success');
-            
-            const preview_html = `
-                <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i> Фото дефекта загружено<br>
-                    <small>${data.filename}</small>
-                    <button type="button" class="btn btn-sm btn-warning mt-2" onclick="clearDefectPhoto()">
-                        <i class="fas fa-trash"></i> Очистить
-                    </button>
-                </div>
-            `;
-            preview.innerHTML = preview_html;
+            button.innerHTML = '<i class="fas fa-check"></i> ✓';
+            button.classList.remove('btn-success');
+            button.classList.add('btn-success');
+            showNotification('✅ Фото загружено!', 'success');
         } else {
-            showNotification('❌ Ошибка: ' + data.message, 'danger');
-            preview.innerHTML = '';
+            showNotification('❌ ' + data.message, 'error');
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-upload"></i> Загр.';
         }
     })
     .catch(error => {
-        showNotification('❌ Ошибка при загрузке: ' + error.message, 'danger');
-        preview.innerHTML = '';
+        showNotification('❌ Ошибка: ' + error.message, 'error');
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-upload"></i> Загр.';
     });
 }
 
-// Функция очистки загруженной фотографии
+// Функция очистки загруженных фотографий
 function clearDefectPhoto() {
     uploadedDefectPhotos = [];
     document.getElementById('defectPhotoInput').value = '';
-    document.getElementById('defectPhotoPreview').innerHTML = '';
+    document.getElementById('uploadedPhotosCount').textContent = '0';
+    updateDefectPhotoPreview();
+}
+
+// Функция очистки всей формы рейтинга
+function resetRatingForm() {
+    document.getElementById('ratingUserId').value = '';
+    document.getElementById('ratingRentalId').value = '';
+    document.getElementById('ratingDate').valueAsDate = new Date();
+    document.getElementById('timing_on_time').checked = true;
+    document.getElementById('condition_perfect').checked = true;
+    document.getElementById('compliance_no').checked = true;
+    document.getElementById('ratingNotes').value = '';
+    clearDefectPhoto();
+    customDefects = [];
+    document.getElementById('customDefectInput').value = '';
+    updateDefectPhotoSection();
+    showNotification('✅ Форма очищена', 'success');
+}
+
+// Функция для отображения/скрытия секции загрузки фотографий
+function updateDefectPhotoSection() {
+    const itemCondition = document.getElementByName('itemCondition')[0]?.checked ? 
+        document.querySelector('input[name="itemCondition"]:checked').value : 
+        document.getElementById('condition_perfect').value;
+    
+    const photoSection = document.getElementById('defectPhotoSection');
+    const parametersSection = document.getElementById('defectsParametersSection');
+    
+    if (itemCondition !== 'perfect') {
+        photoSection.style.display = 'block';
+        parametersSection.style.display = 'block';
+        loadDefectParameters();
+    } else {
+        photoSection.style.display = 'none';
+        parametersSection.style.display = 'none';
+        uploadedDefectPhotos = [];
+        document.getElementById('defectPhotoPreview').innerHTML = '';
+    }
+}
+
+// Функция предпросмотра фотографии дефекта
+function previewDefectPhoto(input) {
+    const preview = document.getElementById('defectPhotoPreview');
+    
+    if (input.files && input.files.length > 0) {
+        Array.from(input.files).forEach((file, fileIndex) => {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const photoCard = document.createElement('div');
+                photoCard.className = 'card';
+                photoCard.style.width = '150px';
+                photoCard.innerHTML = `
+                    <img src="${e.target.result}" style="height: 120px; object-fit: cover; border-radius: 5px 5px 0 0;">
+                    <div class="card-body p-2" style="font-size: 0.75rem;">
+                        <small class="text-truncate d-block">${file.name}</small>
+                        <small class="text-muted">${(file.size / 1024).toFixed(1)} KB</small>
+                        <button type="button" class="btn btn-sm btn-success mt-2 w-100" onclick="uploadDefectPhoto(this)">
+                            <i class="fas fa-upload"></i> Загр.
+                        </button>
+                    </div>
+                `;
+                preview.appendChild(photoCard);
+            };
+            
+            reader.readAsDataURL(file);
+        });
+    }
 }
 
 // Загрузка рейтингов
@@ -4238,30 +4541,46 @@ function loadUserRentals(userId) {
 function addRatingTransaction() {
     const userId = document.getElementById('ratingUserId').value;
     const rentalId = document.getElementById('ratingRentalId').value;
-    const returnTiming = document.getElementById('returnTiming').value;
-    const itemCondition = document.getElementById('itemCondition').value;
-    const ruleCompliance = document.getElementById('ruleCompliance').value;
+    const ratingDate = document.getElementById('ratingDate').value;
+    
+    // Получаем значения из radio buttons
+    const returnTiming = document.querySelector('input[name="returnTiming"]:checked')?.value || 'on_time';
+    const itemCondition = document.querySelector('input[name="itemCondition"]:checked')?.value || 'perfect';
+    const ruleCompliance = document.querySelector('input[name="ruleCompliance"]:checked')?.value || 'no_violations';
     const notes = document.getElementById('ratingNotes').value;
+    
+    // Получаем выбранные параметры дефектов
+    const selectedDefects = Array.from(document.querySelectorAll('#defectsChecklistContainer input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value);
     
     if (!userId) {
         showNotification('❌ Выберите пользователя', 'error');
         return;
     }
     
-    // Если есть дефекты но нет фотографии, предупреждаем
+    // Если есть дефекты рекомендуем загрузить фотографии
     if ((itemCondition === 'minor_defects' || itemCondition === 'major_defects') && uploadedDefectPhotos.length === 0) {
-        showNotification('⚠️ Для дефектов рекомендуется загрузить фотографию', 'warning');
+        if (!confirm('⚠️ Для дефектов рекомендуется загрузить фотографии. Продолжить без фото?')) {
+            return;
+        }
     }
     
     const transactionData = {
         user_id: userId,
         rental_id: rentalId,
+        rating_date: ratingDate,
         return_timing: returnTiming,
         item_condition: itemCondition,
         rule_compliance: ruleCompliance,
         notes: notes,
-        defect_photos: uploadedDefectPhotos  // Добавляем информацию о фотографиях
+        defect_photos: uploadedDefectPhotos,
+        defect_parameters: selectedDefects  // Добавляем выбранные параметры дефектов
     };
+    
+    // Показываем индикатор загрузки
+    const button = event.target;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Сохранение...';
     
     fetch('/api/ratings/transaction', {
         method: 'POST',
@@ -4275,15 +4594,8 @@ function addRatingTransaction() {
         if (data.success) {
             showNotification('✅ ' + data.message, 'success');
             
-            // Очищаем форму и фотографии
-            document.getElementById('ratingUserId').value = '';
-            document.getElementById('ratingRentalId').value = '';
-            document.getElementById('returnTiming').value = 'on_time';
-            document.getElementById('itemCondition').value = 'perfect';
-            document.getElementById('ruleCompliance').value = 'no_violations';
-            document.getElementById('ratingNotes').value = '';
-            clearDefectPhoto();
-            updateDefectPhotoSection();
+            // Очищаем форму используя функцию resetRatingForm
+            resetRatingForm();
             
             // Обновляем таблицу рейтингов
             loadRatings();
@@ -4294,6 +4606,10 @@ function addRatingTransaction() {
     .catch(error => {
         console.error('Ошибка добавления транзакции:', error);
         showNotification('❌ Ошибка добавления оценки', 'error');
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-save"></i> Сохранить оценку клиента';
     });
 }
 
@@ -4436,7 +4752,7 @@ function renderRatingHistory(historyData) {
     const container = document.getElementById('ratingHistoryContainer');
     
     if (historyData.length === 0) {
-        container.innerHTML = '<div class="text-center text-muted">Нет данных об истории рейтингов</div>';
+        container.innerHTML = '<div class="alert alert-info text-center"><i class="fas fa-inbox"></i> Нет данных об истории рейтингов</div>';
         return;
     }
     
@@ -4454,108 +4770,775 @@ function renderRatingHistory(historyData) {
         userGroups[item.user_id].transactions.push(item);
     });
     
-    let html = '';
+    let html = `<div class="accordion" id="ratingsAccordion">`;
+    let userIndex = 0;
     
     Object.entries(userGroups).forEach(([userId, userData]) => {
+        const accordionId = `rating_${userIndex}`;
+        const collapseId = `collapse_${userIndex}`;
+        
         html += `
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-user"></i> ${userData.user_name} (@${userData.username})
-                        <small class="text-muted ms-2">ID: ${userId} | ${userData.full_name}</small>
-                        <span class="badge bg-info ms-2">${userData.transactions.length} транзакций</span>
-                    </h6>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="${accordionId}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                    <div style="flex: 1; display: flex; align-items: center; gap: 15px; width: 100%;">
+                        <div style="font-size: 1.5rem;">👤</div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 1.1rem;">${userData.user_name}</div>
+                            <div style="font-size: 0.9rem; color: #6c757d;">@${userData.username}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="badge bg-primary" style="font-size: 0.85rem; padding: 8px 12px;">
+                                ${userData.transactions.length} 📊 оценок
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="${collapseId}" class="accordion-collapse collapse" data-bs-parent="#ratingsAccordion">
+                <div class="accordion-body p-0">
+                    ${userData.transactions.map((transaction, index) => {
+                        const itemCondition = transaction.item_condition;
+                        const defectPhotos = transaction.defect_photos || [];
+                        const defectParameters = transaction.defect_parameters || [];
+                        
+                        // Определяем цвет статуса
+                        let statusColor = 'success';
+                        let statusIcon = '✅';
+                        let statusText = 'Идеально';
+                        if (itemCondition === 'minor_defects') {
+                            statusColor = 'warning';
+                            statusIcon = '⚠️';
+                            statusText = 'Небольшие дефекты';
+                        } else if (itemCondition === 'major_defects') {
+                            statusColor = 'danger';
+                            statusIcon = '❌';
+                            statusText = 'Серьезные дефекты';
+                        }
+                        
+                        // Форматируем дату правильно
+                        let formattedDate = 'Неизвестная дата';
+                        try {
+                            const date = new Date(transaction.created_at);
+                            if (!isNaN(date.getTime())) {
+                                formattedDate = date.toLocaleDateString('ru-RU', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit'
+                                }) + ' ' + date.toLocaleTimeString('ru-RU', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                            }
+                        } catch(e) {
+                            console.error('Ошибка парсинга даты:', e);
+                        }
+                        
+                        return `
+                        <div class="p-4 ${index > 0 ? 'border-top' : ''}" style="background: ${index % 2 === 0 ? '#fff' : '#f8f9fa'};">
+                            <!-- ЗАГОЛОВОК ОЦЕНКИ -->
+                            <div class="mb-4">
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                                    <div>
+                                        <div style="font-size: 1.2rem; font-weight: 600; color: #0d6efd;">
+                                            📅 ${formattedDate}
+                                        </div>
+                                        ${transaction.rental_id ? `<div style="margin-top: 5px; color: #6c757d;">Аренда ID: <strong>${transaction.rental_id}</strong></div>` : ''}
+                                    </div>
+                                    <span class="badge" style="background-color: ${statusColor === 'success' ? '#28a745' : statusColor === 'warning' ? '#ffc107' : '#dc3545'}; padding: 10px 15px; font-size: 0.95rem;">
+                                        ${statusIcon} ${statusText}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- СЕТКА ПАРАМЕТРОВ -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                                <!-- Время возврата -->
+                                <div style="padding: 15px; background: #f0f7ff; border-radius: 8px; border-left: 4px solid #0d6efd;">
+                                    <div style="font-size: 0.85rem; color: #6c757d; margin-bottom: 8px;">⏰ Время возврата</div>
+                                    <div style="font-weight: 600; font-size: 1rem;">
+                                        ${transaction.return_timing === 'on_time' ? '✅ Вовремя (+10)' : 
+                                          transaction.return_timing === 'late_1_24h' ? '⚠️ Опоздание 1-24ч (-20)' : 
+                                          '❌ Опоздание >24ч (-30)'}
+                                    </div>
+                                </div>
+
+                                <!-- Состояние имущества -->
+                                <div style="padding: 15px; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #6c757d;">
+                                    <div style="font-size: 0.85rem; color: #6c757d; margin-bottom: 8px;">� Состояние</div>
+                                    <div style="font-weight: 600; font-size: 1rem;">
+                                        ${transaction.item_condition === 'perfect' ? '✨ Идеально (+10)' : 
+                                          transaction.item_condition === 'minor_defects' ? '⚠️ Небольшие (-15)' : 
+                                          '❌ Серьезные (-30)'}
+                                    </div>
+                                </div>
+
+                                <!-- Соблюдение правил -->
+                                <div style="padding: 15px; background: #fff8e1; border-radius: 8px; border-left: 4px solid #ffc107;">
+                                    <div style="font-size: 0.85rem; color: #6c757d; margin-bottom: 8px;">📜 Правила</div>
+                                    <div style="font-weight: 600; font-size: 1rem;">
+                                        ${transaction.rule_compliance === 'no_violations' ? '✅ Без нарушений' : 
+                                          transaction.rule_compliance === 'minor_violation' ? '⚠️ Единичное (-15)' : 
+                                          '❌ Грубое (-30)'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ОБЩИЙ КОММЕНТАРИЙ -->
+                            ${transaction.notes ? `
+                            <div style="margin-bottom: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px; border-left: 4px solid #17a2b8;">
+                                <div style="font-size: 0.9rem; color: #6c757d; margin-bottom: 10px; font-weight: 600;">💬 Комментарий администратора:</div>
+                                <div style="font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;">${transaction.notes}</div>
+                            </div>
+                            ` : ''}
+
+                            <!-- ПАРАМЕТРЫ ДЕФЕКТОВ -->
+                            ${defectParameters && defectParameters.length > 0 ? `
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-size: 0.9rem; color: #6c757d; margin-bottom: 10px; font-weight: 600;">🔍 Обнаруженные дефекты:</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    ${defectParameters.map(defect => `
+                                        <span style="display: inline-block; background: #dc3545; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 500;">
+                                            ${defect}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            ` : ''}
+
+                            <!-- ФОТОГРАФИИ ДЕФЕКТОВ -->
+                            ${defectPhotos && defectPhotos.length > 0 ? `
+                            <div>
+                                <div style="font-size: 0.9rem; color: #6c757d; margin-bottom: 10px; font-weight: 600;">📸 Фотографии дефектов (${defectPhotos.length}):</div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;">
+                                    ${defectPhotos.map((photo, idx) => `
+                                        <div style="position: relative; overflow: hidden; border-radius: 8px; background: #f8f9fa; aspect-ratio: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;"
+                                             onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'"
+                                             onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'"
+                                             onclick="viewDefectPhotoModal('${photo.path}', '${photo.category || 'Дефект'}')">
+                                            <img src="${photo.path}" 
+                                                 style="width: 100%; height: 100%; object-fit: cover;"
+                                                 alt="Дефект ${idx + 1}">
+                                            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; font-size: 0.75rem; text-align: center;">
+                                                ${photo.severity ? (photo.severity === 'critical' ? '🔴 Критический' : photo.severity === 'moderate' ? '🔶 Средний' : '⚠️ Слабый') : 'Фото ' + (idx + 1)}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                ${defectPhotos.length > 0 ? `
+                                <div style="margin-top: 10px; font-size: 0.85rem; color: #6c757d;">
+                                    💡 Подсказка: Нажмите на фото для просмотра в полный размер
+                                </div>
+                                ` : ''}
+                            </div>
+                            ` : ''}
+                        </div>
+                        `;
+                    }).join('')}
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Дата</th>
-                                    <th>Возврат</th>
-                                    <th>Состояние</th>
-                                    <th>Правила</th>
-                                    <th>Комментарий</th>
-                                    <th>Оценка</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+            </div>
+        </div>
         `;
         
-        userData.transactions.forEach(transaction => {
-            // Красивые бейджи для возврата
-            const returnTimingBadge = {
-                'on_time': '<span class="badge" style="background-color: #28a745; color: white;">on_time</span>',
-                'late_1_24h': '<span class="badge" style="background-color: #ffc107; color: black;">late_1_24h</span>',
-                'late_over_24h': '<span class="badge" style="background-color: #dc3545; color: white;">late_over_24h</span>'
-            }[transaction.return_timing] || transaction.return_timing;
-            
-            // Красивые бейджи для состояния
-            const itemConditionBadge = {
-                'perfect': '<span class="badge" style="background-color: #28a745; color: white;">perfect</span>',
-                'minor_defects': '<span class="badge" style="background-color: #ffc107; color: black;">minor_defects</span>',
-                'major_defects': '<span class="badge" style="background-color: #fd7e14; color: white;">major_defects</span>'
-            }[transaction.item_condition] || transaction.item_condition;
-            
-            // Красивые бейджи для правил
-            const ruleComplianceBadge = {
-                'no_violations': '<span class="badge" style="background-color: #28a745; color: white;">no_violations</span>',
-                'minor_violation': '<span class="badge" style="background-color: #ffc107; color: black;">minor_violation</span>',
-                'major_violation': '<span class="badge" style="background-color: #dc3545; color: white;">major_violation</span>'
-            }[transaction.rule_compliance] || transaction.rule_compliance;
-            
-            // Определяем иконку и цвет для описания
-            let descriptionIcon = '';
-            let descriptionColor = '';
-            if (transaction.description.includes('⭐')) {
-                descriptionIcon = '⭐';
-                descriptionColor = '#ffc107';
-            } else if (transaction.description.includes('⏰')) {
-                descriptionIcon = '⏰';
-                descriptionColor = '#fd7e14';
-            } else if (transaction.description.includes('🚨')) {
-                descriptionIcon = '🚨';
-                descriptionColor = '#dc3545';
-            } else if (transaction.description.includes('🔧')) {
-                descriptionIcon = '🔧';
-                descriptionColor = '#6c757d';
-            } else if (transaction.description.includes('⚠️')) {
-                descriptionIcon = '⚠️';
-                descriptionColor = '#ffc107';
-            }
-            
-            html += `
-                <tr>
-                    <td><strong>${transaction.date}</strong></td>
-                    <td>${returnTimingBadge}</td>
-                    <td>${itemConditionBadge}</td>
-                    <td>${ruleComplianceBadge}</td>
-                    <td class="text-truncate" style="max-width: 200px;" title="${transaction.notes || '-'}">${transaction.notes || '-'}</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span style="font-size: 1.2em; margin-right: 5px;">${descriptionIcon}</span>
-                            <span style="color: ${descriptionColor}; font-weight: 500;">${transaction.description.replace(/[⭐⏰🚨🔧⚠️]/g, '').trim()}</span>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-        
-        html += '</tbody></table></div></div></div>';
+        userIndex++;
     });
     
+    html += `</div>`;
     container.innerHTML = html;
+}
+
+// Функция просмотра фотографии дефекта в модальном окне
+function viewDefectPhotoModal(photoPath, defectName) {
+    const modalHtml = `
+        <div class="modal fade" id="defectPhotoModal" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-image"></i> Фотография дефекта: ${defectName}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img src="${photoPath}" class="img-fluid" style="max-height: 70vh; border-radius: 5px;">
+                    </div>
+                    <div class="modal-footer">
+                        <a href="${photoPath}" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> Открыть в новом окне
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Удаляем предыдущий модал если есть
+    const existingModal = document.getElementById('defectPhotoModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Добавляем новый модал
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Показываем модал
+    const modal = new bootstrap.Modal(document.getElementById('defectPhotoModal'));
+    modal.show();
+}
+
+// Функция экспорта истории рейтингов
+function exportRatingHistory() {
+    const container = document.getElementById('ratingHistoryContainer');
+    const text = container.innerText;
+    const filename = `rating_history_${new Date().toISOString().slice(0, 10)}.txt`;
+    
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    
+    showNotification('✅ История экспортирована в ' + filename, 'success');
 }
 
 // Загрузка истории рейтингов при открытии вкладки рейтингов
 document.addEventListener('DOMContentLoaded', function() {
+    // Загружаем отчеты из localStorage
+    const savedReports = localStorage.getItem('defectReports');
+    if (savedReports) {
+        defectReports = JSON.parse(savedReports);
+        document.getElementById('defectReportsCount').textContent = defectReports.length;
+    }
+    
     const ratingsTab = document.getElementById('ratings-tab');
     if (ratingsTab) {
         ratingsTab.addEventListener('click', function() {
             setTimeout(loadRatingHistory, 100);
         });
     }
+    
+    // Обработка вкладки "Мои отчеты"
+    const defectReportsTab = document.getElementById('defect-reports-tab');
+    if (defectReportsTab) {
+        defectReportsTab.addEventListener('click', function() {
+            setTimeout(loadMyDefectReports, 100);
+        });
+    }
 });
+
+// ================================
+// ФУНКЦИИ ДЛЯ УПРАВЛЕНИЯ ОТЧЕТАМИ
+// ================================
+
+function loadMyDefectReports() {
+    const container = document.getElementById('myDefectReportsList');
+    
+    if (defectReports.length === 0) {
+        container.innerHTML = `
+            <div class="alert alert-info text-center">
+                <i class="fas fa-inbox"></i> <strong>Отчетов не найдено</strong>
+                <p class="mt-2">Начните с загрузки фотографий дефектов через полноэкранный модал</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    defectReports.forEach((report, index) => {
+        const severityIcon = report.severity === 'critical' ? '🔴' : 
+                           report.severity === 'moderate' ? '🔶' : '⚠️';
+        const severityText = report.severity === 'critical' ? 'Критический' : 
+                           report.severity === 'moderate' ? 'Средний' : 'Слабый';
+        
+        html += `
+        <div class="card mb-3 border-left-4" style="border-left: 4px solid #17a2b8; cursor: pointer; transition: all 0.3s;" 
+             onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'; this.style.transform='translateY(-2px)'"
+             onmouseout="this.style.boxShadow='0 0.125rem 0.25rem rgba(0,0,0,0.075)'; this.style.transform='translateY(0)'"
+             onclick="openDefectReportFullscreen(${index})">
+            <div class="card-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h6 class="mb-1" style="font-size: 1.1rem;">
+                            ${severityIcon} ${report.category}
+                        </h6>
+                        <small>📍 ${report.location}</small>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.9rem;">📅 ${report.timestamp}</div>
+                        <div><span class="badge bg-light text-dark">${report.photos.length} 📸</span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-0" style="color: #555; line-height: 1.6;">
+                    ${report.description.substring(0, 150)}${report.description.length > 150 ? '...' : ''}
+                </p>
+                <small class="text-muted mt-2 d-block">
+                    <i class="fas fa-hand-pointer"></i> Нажмите для полного просмотра
+                </small>
+            </div>
+        </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+function openDefectReportFullscreen(reportIndex) {
+    const report = defectReports[reportIndex];
+    if (!report) return;
+    
+    const severityIcon = report.severity === 'critical' ? '🔴' : 
+                       report.severity === 'moderate' ? '🔶' : '⚠️';
+    const severityText = report.severity === 'critical' ? 'Критический' : 
+                       report.severity === 'moderate' ? 'Средний' : 'Слабый';
+    
+    const modalHtml = `
+    <div class="modal fade" id="defectReportModal_${reportIndex}" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-alt"></i> Отчет о дефекте
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" style="background: #f8f9fa; overflow-y: auto; max-height: 90vh;">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <!-- ЛЕВАЯ КОЛОНКА - ИНФОРМАЦИЯ -->
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm mb-3">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">📋 Информация о дефекте</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>🏷️ Категория</strong></label>
+                                            <div class="p-3 bg-light rounded" style="border-left: 4px solid #0d6efd;">
+                                                ${report.category}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>📍 Расположение</strong></label>
+                                            <div class="p-3 bg-light rounded" style="border-left: 4px solid #0d6efd;">
+                                                ${report.location}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>⚠️ Серьезность</strong></label>
+                                            <div class="p-3 bg-light rounded" style="border-left: 4px solid #ffc107;">
+                                                ${severityIcon} ${severityText}
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label"><strong>📅 Время отчета</strong></label>
+                                            <div class="p-3 bg-light rounded" style="border-left: 4px solid #17a2b8;">
+                                                ${report.timestamp}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h6 class="mb-0">🔍 Описание дефекта</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p style="white-space: pre-wrap; line-height: 1.8; color: #333;">
+                                            ${report.description}
+                                        </p>
+                                        ${report.notes ? `
+                                        <hr>
+                                        <h6 class="mt-3">💬 Дополнительные примечания:</h6>
+                                        <p style="white-space: pre-wrap; line-height: 1.8; color: #555;">
+                                            ${report.notes}
+                                        </p>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- ПРАВАЯ КОЛОНКА - ФОТОГРАФИИ -->
+                            <div class="col-md-6">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-warning text-dark">
+                                        <h6 class="mb-0">📸 Фотографии дефектов (${report.photos.length})</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
+                                            ${report.photos.map((photo, idx) => `
+                                            <div style="position: relative; overflow: hidden; border-radius: 8px; background: #f8f9fa; aspect-ratio: 1; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.3s, box-shadow 0.3s;"
+                                                 onmouseover="this.style.transform='scale(1.05)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)'"
+                                                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'"
+                                                 onclick="openFullscreenPhoto('${photo.path}')">
+                                                <img src="${photo.path}" 
+                                                     style="width: 100%; height: 100%; object-fit: cover;"
+                                                     alt="Дефект ${idx + 1}"
+                                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Crect fill=%22%23f0f0f0%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2214%22 fill=%22%23999%22%3EФото не найдено%3C/text%3E%3C/svg%3E'">
+                                                <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.7); color: white; padding: 6px; font-size: 0.8rem; text-align: center;">
+                                                    ${photo.severity ? (photo.severity === 'critical' ? '🔴 Критический' : photo.severity === 'moderate' ? '🔶 Средний' : '⚠️ Слабый') : '📷 ' + (idx + 1)}
+                                                </div>
+                                            </div>
+                                            `).join('')}
+                                        </div>
+                                        
+                                        <div class="alert alert-info mt-4 mb-0">
+                                            <small>
+                                                💡 <strong>Подсказка:</strong> Наведите и нажмите на фото для просмотра в полный размер
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="deleteDefectReport(${reportIndex})">
+                        <i class="fas fa-trash"></i> Удалить отчет
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Закрыть
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+    
+    // Удаляем предыдущий модал если есть
+    const existingModal = document.getElementById(`defectReportModal_${reportIndex}`);
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Добавляем новый модал
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Показываем модал
+    const modal = new bootstrap.Modal(document.getElementById(`defectReportModal_${reportIndex}`));
+    modal.show();
+}
+
+function openFullscreenPhoto(photoPath) {
+    const modalHtml = `
+    <div class="modal fade" id="photoViewerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark">
+                <div class="modal-header bg-dark border-secondary">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-image"></i> Просмотр фотографии
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center p-0" style="background: #1a1a1a;">
+                    <img src="${photoPath}" 
+                         style="max-width: 100%; max-height: 80vh; border-radius: 5px;"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 300%22%3E%3Crect fill=%22%23333%22 width=%22400%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22Arial%22 font-size=%2218%22 fill=%22%23999%22%3EФото не найдено%3C/text%3E%3C/svg%3E'">
+                </div>
+                <div class="modal-footer bg-dark border-secondary">
+                    <a href="${photoPath}" target="_blank" class="btn btn-outline-light">
+                        <i class="fas fa-external-link-alt"></i> Открыть в новом окне
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+    
+    // Удаляем предыдущий модал если есть
+    const existingModal = document.getElementById('photoViewerModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Добавляем новый модал
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Показываем модал
+    const modal = new bootstrap.Modal(document.getElementById('photoViewerModal'));
+    modal.show();
+}
+
+function deleteDefectReport(reportIndex) {
+    if (confirm('Вы уверены, что хотите удалить этот отчет?')) {
+        defectReports.splice(reportIndex, 1);
+        localStorage.setItem('defectReports', JSON.stringify(defectReports));
+        
+        // Закрываем модал
+        const modalElement = document.querySelector('.modal.show');
+        if (modalElement) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) modal.hide();
+        }
+        
+        // Обновляем список
+        loadMyDefectReports();
+        document.getElementById('defectReportsCount').textContent = defectReports.length;
+        showNotification('✅ Отчет удален', 'success');
+    }
+}
+
+// ================================
+// ФУНКЦИИ ДЛЯ ПОЛНОЭКРАННОГО МОДАЛА
+// ================================
+
+let fullscreenUploadedPhotos = [];
+
+function openDefectPhotoModal() {
+    const modal = new bootstrap.Modal(document.getElementById('defectPhotoFullscreenModal'), {
+        backdrop: 'static',
+        keyboard: false
+    });
+    
+    // Очистить список при открытии
+    fullscreenUploadedPhotos = [];
+    document.getElementById('fullscreenPhotoList').innerHTML = '<small class="text-muted">Фотографии будут отображены здесь</small>';
+    document.getElementById('fullscreenPhotoCount').textContent = '0';
+    
+    // Очистить поля описания
+    document.getElementById('defectCategory').value = '';
+    document.getElementById('defectLocation').value = '';
+    document.getElementById('defectDescription').value = '';
+    document.getElementById('defectNotes').value = '';
+    document.getElementById('severity_minor').checked = true;
+    
+    modal.show();
+}
+
+function handlePhotoDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    document.getElementById('dragDropZone').classList.remove('border-primary');
+    
+    const files = e.dataTransfer.files;
+    processPhotoFiles(files);
+}
+
+function handlePhotoSelect(e) {
+    const files = e.target.files;
+    processPhotoFiles(files);
+}
+
+function processPhotoFiles(files) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB per file
+    
+    Array.from(files).forEach(file => {
+        // Проверка типа файла
+        if (!allowedTypes.includes(file.type)) {
+            showNotification(`❌ Файл ${file.name} имеет неподдерживаемый формат`, 'danger');
+            return;
+        }
+        
+        // Проверка размера
+        if (file.size > maxSize) {
+            showNotification(`❌ Файл ${file.name} слишком большой (макс. 5MB)`, 'danger');
+            return;
+        }
+        
+        // Читаем файл
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const photoItem = {
+                dataUrl: e.target.result,
+                file: file,
+                name: file.name,
+                size: file.size
+            };
+            
+            fullscreenUploadedPhotos.push(photoItem);
+            updateFullscreenPhotoList();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function updateFullscreenPhotoList() {
+    const photoList = document.getElementById('fullscreenPhotoList');
+    document.getElementById('fullscreenPhotoCount').textContent = fullscreenUploadedPhotos.length;
+    
+    if (fullscreenUploadedPhotos.length === 0) {
+        photoList.innerHTML = '<small class="text-muted">Фотографии будут отображены здесь</small>';
+        return;
+    }
+    
+    let html = '<div class="row g-2">';
+    fullscreenUploadedPhotos.forEach((photo, index) => {
+        html += `
+            <div class="col-12">
+                <div class="card">
+                    <div class="row g-0">
+                        <div class="col-md-3">
+                            <img src="${photo.dataUrl}" alt="${photo.name}" 
+                                 style="height: 100px; width: 100%; object-fit: cover;">
+                        </div>
+                        <div class="col-md-9 p-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="d-block"><strong>${photo.name}</strong></small>
+                                    <small class="text-muted">${(photo.size / 1024).toFixed(1)} KB</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-danger" 
+                                        onclick="removeFullscreenPhoto(${index})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    photoList.innerHTML = html;
+}
+
+function removeFullscreenPhoto(index) {
+    fullscreenUploadedPhotos.splice(index, 1);
+    updateFullscreenPhotoList();
+    showNotification('✅ Фото удалено', 'info');
+}
+
+async function saveDefectPhotosAndDescription() {
+    if (fullscreenUploadedPhotos.length === 0) {
+        showNotification('❌ Пожалуйста, добавьте хотя бы одну фотографию', 'warning');
+        return;
+    }
+    
+    const category = document.getElementById('defectCategory').value;
+    const location = document.getElementById('defectLocation').value;
+    const description = document.getElementById('defectDescription').value;
+    const severity = document.querySelector('input[name="severity"]:checked').value;
+    const notes = document.getElementById('defectNotes').value;
+    
+    if (!category) {
+        showNotification('❌ Пожалуйста, выберите категорию дефекта', 'warning');
+        return;
+    }
+    
+    if (!location) {
+        showNotification('❌ Пожалуйста, укажите расположение дефекта', 'warning');
+        return;
+    }
+    
+    if (!description) {
+        showNotification('❌ Пожалуйста, опишите дефект', 'warning');
+        return;
+    }
+    
+    // Показываем индикатор загрузки
+    showNotification('⏳ Загружаем фотографии...', 'info');
+    
+    const rentalId = document.getElementById('ratingRentalId').value || 'unknown';
+    
+    try {
+        // Загружаем фотографии на сервер
+        for (const photo of fullscreenUploadedPhotos) {
+            const formData = new FormData();
+            formData.append('photo', photo.file);
+            formData.append('rental_id', rentalId);
+            
+            const response = await fetch('/api/upload-defect-photo', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) throw new Error('Upload failed');
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                // Добавляем в основной массив с метаданными
+                uploadedDefectPhotos.push({
+                    path: data.photo_path,
+                    filename: data.filename,
+                    category: category,
+                    location: location,
+                    description: description,
+                    severity: severity,
+                    notes: notes,
+                    timestamp: new Date().toLocaleString('ru-RU')
+                });
+            }
+        }
+        
+        // Закрываем модал
+        bootstrap.Modal.getInstance(document.getElementById('defectPhotoFullscreenModal')).hide();
+        
+        // Обновляем счетчик в основной форме
+        document.getElementById('uploadedPhotosCount').textContent = uploadedDefectPhotos.length;
+        
+        // Обновляем предпросмотр в основной форме
+        updateDefectPhotoPreview();
+        
+        // Сохраняем отчет в массив отчетов
+        const report = {
+            id: Date.now(), // Уникальный ID
+            category: category,
+            location: location,
+            description: description,
+            severity: severity,
+            notes: notes,
+            timestamp: new Date().toLocaleString('ru-RU'),
+            photos: uploadedDefectPhotos.slice(-fullscreenUploadedPhotos.length) // Последние загруженные фото
+        };
+        
+        defectReports.push(report);
+        localStorage.setItem('defectReports', JSON.stringify(defectReports));
+        
+        // Обновляем счетчик на вкладке
+        document.getElementById('defectReportsCount').textContent = defectReports.length;
+        
+        showNotification(`✅ ${fullscreenUploadedPhotos.length} фото успешно загружены!`, 'success');
+        
+        // Очищаем временный массив
+        fullscreenUploadedPhotos = [];
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('❌ Ошибка при загрузке фотографий', 'danger');
+    }
+}
+
+function updateDefectPhotoPreview() {
+    const preview = document.getElementById('defectPhotoPreview');
+    
+    if (!uploadedDefectPhotos.length) {
+        preview.innerHTML = '<p class="text-muted">Фотографии еще не загружены</p>';
+        return;
+    }
+    
+    let html = '<div class="d-flex gap-3 flex-wrap">';
+    
+    uploadedDefectPhotos.forEach((photo, index) => {
+        html += `
+            <div class="card" style="width: 150px;">
+                <img src="${photo.path}" style="height: 120px; object-fit: cover; border-radius: 5px 5px 0 0; cursor: pointer;"
+                     onclick="viewDefectPhotoModal('${photo.path}', '${photo.filename}', ${index})"
+                     title="Нажмите для просмотра">
+                <div class="card-body p-2" style="font-size: 0.75rem;">
+                    <small class="text-truncate d-block" title="${photo.filename}"><strong>${photo.filename.substring(0, 20)}...</strong></small>
+                    <small class="badge bg-warning text-dark d-block mt-1">${photo.severity === 'critical' ? '🔴 Критический' : photo.severity === 'moderate' ? '🔶 Средний' : '⚠️ Незначительный'}</small>
+                    ${photo.location ? `<small class="text-muted d-block mt-1">${photo.location.substring(0, 15)}</small>` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    preview.innerHTML = html;
+}
 
 </script>
 
@@ -4605,6 +5588,54 @@ document.addEventListener('DOMContentLoaded', function() {
     border-bottom: 1px solid #e3e6f0;
 }
 
+/* Стили для аккордиона истории рейтингов */
+#ratingsAccordion {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+#ratingsAccordion .accordion-item {
+    border: 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#ratingsAccordion .accordion-item:last-child {
+    border-bottom: 0;
+}
+
+#ratingsAccordion .accordion-button {
+    padding: 1.5rem;
+    background-color: #fff;
+    border: 0;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#ratingsAccordion .accordion-button:not(.collapsed) {
+    background-color: #e7f3ff;
+    color: #0d6efd;
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.125);
+}
+
+#ratingsAccordion .accordion-button:hover {
+    background-color: #f8f9fa;
+}
+
+#ratingsAccordion .accordion-button:focus {
+    border-color: 0;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+#ratingsAccordion .accordion-button::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%230d6efd' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+#ratingsAccordion .accordion-body {
+    padding: 0;
+    background-color: #fafbfc;
+}
+
 .calendar-table td {
     text-align: center;
     vertical-align: middle;
@@ -4628,6 +5659,43 @@ document.addEventListener('DOMContentLoaded', function() {
 .calendar-legend .badge {
     margin-right: 5px;
     font-size: 0.8em;
+}
+
+/* Стили для полноэкранного модала загрузки дефектов */
+.border-dashed {
+    border-style: dashed !important;
+}
+
+#dragDropZone:hover {
+    background-color: #e7f1ff;
+    transition: all 0.3s ease;
+}
+
+#dragDropZone.border-primary {
+    background-color: #e7f1ff;
+    border-color: #0d6efd !important;
+}
+
+#fullscreenPhotoList {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+}
+
+.btn-outline-orange {
+    border-color: #fd7e14 !important;
+    color: #fd7e14 !important;
+}
+
+.btn-outline-orange:hover {
+    background-color: #fd7e14;
+    color: white !important;
+}
+
+.modal-fullscreen .modal-body {
+    overflow-y: auto;
+    max-height: 90vh;
 }
 </style>
 
@@ -4802,5 +5870,123 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 </script>
+
+<!-- ПОЛНОЭКРАННЫЙ МОДАЛ ЗАГРУЗКИ ДЕФЕКТОВ -->
+<div class="modal fade" id="defectPhotoFullscreenModal" tabindex="-1" style="--bs-modal-bg: #f8f9fa;">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-camera"></i> Загрузка фотографий и описание дефектов
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row h-100">
+                    <!-- Левая часть - загрузка фото -->
+                    <div class="col-md-6 d-flex flex-column">
+                        <h5 class="mb-3"><i class="fas fa-image"></i> Фотографии дефектов</h5>
+                        
+                        <!-- Зона перетаскивания -->
+                        <div class="card bg-light border-2 border-dashed p-5 text-center flex-grow-1 d-flex align-items-center justify-content-center"
+                             id="dragDropZone"
+                             ondrop="handlePhotoDrop(event)"
+                             ondragover="event.preventDefault(); this.classList.add('border-primary');"
+                             ondragleave="this.classList.remove('border-primary');"
+                             style="cursor: pointer; min-height: 400px; border-color: #dee2e6 !important;">
+                            
+                            <div class="text-center">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #0d6efd;"></i>
+                                <h6 class="mt-3">Перетащите фотографии сюда</h6>
+                                <p class="text-muted mb-0">или</p>
+                                <button type="button" class="btn btn-primary mt-3" onclick="document.getElementById('fullscreenPhotoInput').click()">
+                                    <i class="fas fa-folder-open"></i> Выбрать фото
+                                </button>
+                                <input type="file" id="fullscreenPhotoInput" accept="image/*" multiple style="display: none;" onchange="handlePhotoSelect(event)">
+                                <small class="d-block mt-3 text-muted">Поддерживаемые форматы: JPG, PNG, GIF, WEBP</small>
+                            </div>
+                        </div>
+
+                        <!-- Список загруженных фото -->
+                        <div class="mt-4">
+                            <h6>Загруженные фотографии (<span id="fullscreenPhotoCount">0</span>)</h6>
+                            <div id="fullscreenPhotoList" style="max-height: 200px; overflow-y: auto;">
+                                <small class="text-muted">Фотографии будут отображены здесь</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Правая часть - описание дефекта -->
+                    <div class="col-md-6 d-flex flex-column ps-4">
+                        <h5 class="mb-3"><i class="fas fa-edit"></i> Описание дефекта</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label"><strong>🏷️ Категория дефекта</strong></label>
+                            <select class="form-select" id="defectCategory">
+                                <option value="">-- Выберите категорию --</option>
+                                <option value="display">🖥️ Экран/Дисплей</option>
+                                <option value="body">📦 Корпус</option>
+                                <option value="buttons">🔘 Кнопки</option>
+                                <option value="ports">🔌 Порты и разъемы</option>
+                                <option value="audio">🔊 Звук</option>
+                                <option value="battery">🔋 Батарея/Питание</option>
+                                <option value="liquid">💧 Попадание жидкости</option>
+                                <option value="missing">❌ Отсутствующие части</option>
+                                <option value="other">📌 Другое</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><strong>📍 Расположение дефекта</strong></label>
+                            <input type="text" class="form-control" id="defectLocation" placeholder="Например: верхний левый угол, передняя часть, боковая панель и т.д.">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><strong>🔍 Описание дефекта</strong></label>
+                            <textarea class="form-control" id="defectDescription" rows="4" 
+                                      placeholder="Детально опишите дефект:&#10;- Тип повреждения (царапина, трещина, вмятина и т.д.)&#10;- Размер (приблизительно)&#10;- Тяжесть (поверхностный / функциональный / критический)&#10;- Когда это произошло (если известно)&#10;- Влияние на работу"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><strong>⚠️ Серьезность</strong></label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="severity" id="severity_minor" value="minor" checked>
+                                <label class="btn btn-outline-warning" for="severity_minor">
+                                    ⚠️ Незначительный
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="severity" id="severity_moderate" value="moderate">
+                                <label class="btn btn-outline-orange" for="severity_moderate" style="border-color: #fd7e14; color: #fd7e14;">
+                                    🔶 Средний
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="severity" id="severity_critical" value="critical">
+                                <label class="btn btn-outline-danger" for="severity_critical">
+                                    🔴 Критический
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 flex-grow-1">
+                            <label class="form-label"><strong>💬 Дополнительные примечания</strong></label>
+                            <textarea class="form-control" id="defectNotes" rows="3" 
+                                      placeholder="Любая дополнительная информация..."></textarea>
+                        </div>
+
+                        <!-- Кнопки действия -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times"></i> Отменить
+                            </button>
+                            <button type="button" class="btn btn-success btn-lg" onclick="saveDefectPhotosAndDescription()">
+                                <i class="fas fa-save"></i> Сохранить дефект
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
