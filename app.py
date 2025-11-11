@@ -2198,6 +2198,60 @@ def get_return_info(rental_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# ==================== ЗАГРУЗКА ФОТОГРАФИЙ РЕЙТИНГА ====================
+
+@app.route('/api/upload-defect-photo', methods=['POST'])
+@login_required
+def upload_defect_photo():
+    """Загрузка фотографии дефекта для рейтинга"""
+    try:
+        if 'photo' not in request.files:
+            return jsonify({'status': 'error', 'message': 'Файл не выбран'})
+        
+        file = request.files['photo']
+        rental_id = request.form.get('rental_id', '')
+        
+        if file.filename == '':
+            return jsonify({'status': 'error', 'message': 'Файл не выбран'})
+        
+        # Проверяем тип файла
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        file_extension = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+        
+        if file_extension not in allowed_extensions:
+            return jsonify({
+                'status': 'error',
+                'message': 'Неподдерживаемый формат. Разрешены: PNG, JPG, JPEG, GIF, WEBP'
+            })
+        
+        # Создаем директорию если не существует
+        defects_dir = os.path.join('static', 'img', 'defects')
+        os.makedirs(defects_dir, exist_ok=True)
+        
+        # Создаем уникальное имя файла
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        unique_id = str(uuid.uuid4())[:8]
+        filename = f"defect_{rental_id}_{timestamp}_{unique_id}.{file_extension}"
+        file_path = os.path.join(defects_dir, secure_filename(filename))
+        
+        # Сохраняем файл
+        file.save(file_path)
+        
+        return jsonify({
+            'status': 'success',
+            'photo_path': f"/static/img/defects/{secure_filename(filename)}",
+            'filename': secure_filename(filename),
+            'message': 'Фото успешно загружено'
+        })
+            
+    except Exception as e:
+        print(f"❌ Ошибка загрузки фото дефекта: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Ошибка при загрузке фото: {str(e)}'
+        })
+
+
 # ==================== ЗАПУСК ПРИЛОЖЕНИЯ ====================
 
 if __name__ == '__main__':

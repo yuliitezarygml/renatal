@@ -1022,23 +1022,33 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label">Состояние имущества:</label>
-                                    <select class="form-control" id="itemCondition">
-                                        <option value="perfect">Идеально (+10)</option>
-                                        <option value="minor_defects">Небольшие дефекты (-15)</option>
-                                        <option value="major_defects">Существенные дефекты (-30)</option>
+                                    <select class="form-control" id="itemCondition" onchange="updateDefectPhotoSection()">
+                                        <option value="perfect">✅ Идеально (+10)</option>
+                                        <option value="minor_defects">⚠️ Небольшие дефекты (-15)</option>
+                                        <option value="major_defects">❌ Существенные дефекты (-30)</option>
                                     </select>
+                                </div>
+                                <div class="mb-3" id="defectPhotoSection" style="display: none;">
+                                    <label class="form-label">📸 Фотография дефекта:</label>
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" id="defectPhotoInput" accept="image/*" onchange="previewDefectPhoto(this)">
+                                        <button class="btn btn-outline-info" type="button" onclick="document.getElementById('defectPhotoInput').click()">
+                                            <i class="fas fa-camera"></i> Выбрать
+                                        </button>
+                                    </div>
+                                    <div id="defectPhotoPreview" style="margin-top: 10px;"></div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Соблюдение правил:</label>
                                     <select class="form-control" id="ruleCompliance">
-                                        <option value="no_violations">Без нарушений (0)</option>
-                                        <option value="minor_violation">Единичное нарушение (-15)</option>
-                                        <option value="major_violation">Грубое нарушение (-30)</option>
+                                        <option value="no_violations">✅ Без нарушений (0)</option>
+                                        <option value="minor_violation">⚠️ Единичное нарушение (-15)</option>
+                                        <option value="major_violation">❌ Грубое нарушение (-30)</option>
                                     </select>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Комментарий:</label>
-                                    <textarea class="form-control" id="ratingNotes" rows="3" placeholder="Дополнительные заметки..."></textarea>
+                                    <label class="form-label">📝 Комментарий:</label>
+                                    <textarea class="form-control" id="ratingNotes" rows="4" placeholder="Подробное описание состояния имущества, характер дефектов, выполнены ли правила..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -3630,6 +3640,113 @@ function removeHoliday(date) {
 
 // ===== СИСТЕМА РЕЙТИНГОВ =====
 
+// Переменная для хранения пути загруженной фотографии
+let uploadedDefectPhotos = [];
+
+// Функция для отображения/скрытия секции загрузки фотографий
+function updateDefectPhotoSection() {
+    const itemCondition = document.getElementById('itemCondition').value;
+    const photoSection = document.getElementById('defectPhotoSection');
+    
+    if (itemCondition !== 'perfect') {
+        photoSection.style.display = 'block';
+    } else {
+        photoSection.style.display = 'none';
+        uploadedDefectPhotos = [];
+        document.getElementById('defectPhotoPreview').innerHTML = '';
+    }
+}
+
+// Функция предпросмотра фотографии дефекта
+function previewDefectPhoto(input) {
+    const preview = document.getElementById('defectPhotoPreview');
+    preview.innerHTML = '';
+    
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const preview_html = `
+                <div class="card">
+                    <div class="card-body" style="padding: 10px;">
+                        <img src="${e.target.result}" style="max-width: 100%; max-height: 300px; border-radius: 5px;">
+                        <div class="mt-2">
+                            <small class="text-muted">${file.name} (${(file.size / 1024).toFixed(2)} KB)</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-success mt-2" onclick="uploadDefectPhoto('${file.name}')">
+                            <i class="fas fa-upload"></i> Загрузить на сервер
+                        </button>
+                    </div>
+                </div>
+            `;
+            preview.innerHTML = preview_html;
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+
+// Функция загрузки фотографии дефекта на сервер
+function uploadDefectPhoto(fileName) {
+    const input = document.getElementById('defectPhotoInput');
+    const rentalId = document.getElementById('ratingRentalId').value || 'unknown';
+    
+    if (!input.files[0]) {
+        showNotification('⚠️ Выберите файл для загрузки', 'warning');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('photo', input.files[0]);
+    formData.append('rental_id', rentalId);
+    
+    // Показываем прогресс загрузки
+    const preview = document.getElementById('defectPhotoPreview');
+    preview.innerHTML = '<div class="alert alert-info">⏳ Загружаем фотографию...</div>';
+    
+    fetch('/api/upload-defect-photo', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            uploadedDefectPhotos.push({
+                path: data.photo_path,
+                filename: data.filename
+            });
+            
+            showNotification('✅ Фотография успешно загружена!', 'success');
+            
+            const preview_html = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Фото дефекта загружено<br>
+                    <small>${data.filename}</small>
+                    <button type="button" class="btn btn-sm btn-warning mt-2" onclick="clearDefectPhoto()">
+                        <i class="fas fa-trash"></i> Очистить
+                    </button>
+                </div>
+            `;
+            preview.innerHTML = preview_html;
+        } else {
+            showNotification('❌ Ошибка: ' + data.message, 'danger');
+            preview.innerHTML = '';
+        }
+    })
+    .catch(error => {
+        showNotification('❌ Ошибка при загрузке: ' + error.message, 'danger');
+        preview.innerHTML = '';
+    });
+}
+
+// Функция очистки загруженной фотографии
+function clearDefectPhoto() {
+    uploadedDefectPhotos = [];
+    document.getElementById('defectPhotoInput').value = '';
+    document.getElementById('defectPhotoPreview').innerHTML = '';
+}
+
 // Загрузка рейтингов
 function loadRatings() {
     fetch('/api/ratings')
@@ -3777,6 +3894,18 @@ function showRatingModal(rating) {
                                             <td><span class="badge ${t.rule_compliance === 'no_violations' ? 'bg-success' : 'bg-danger'}">${t.rule_compliance}</span></td>
                                             <td>
                                                 <div>${t.notes || '-'}</div>
+                                                ${t.defect_photos && t.defect_photos.length > 0 ? `
+                                                    <div class="mt-2">
+                                                        <small class="text-warning"><i class="fas fa-camera"></i> ${t.defect_photos.length} фото</small>
+                                                        <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px;">
+                                                            ${t.defect_photos.map((p, idx) => `
+                                                                <a href="${p.path}" target="_blank" class="btn btn-sm btn-outline-primary" title="Фото дефекта ${idx + 1}">
+                                                                    <i class="fas fa-image"></i>
+                                                                </a>
+                                                            `).join('')}
+                                                        </div>
+                                                    </div>
+                                                ` : ''}
                                                 <small class="text-muted" 
                                                        title="${getDetailedRatingDescription(t.return_timing, t.item_condition, t.rule_compliance)}"
                                                        data-bs-toggle="tooltip">
@@ -4115,8 +4244,13 @@ function addRatingTransaction() {
     const notes = document.getElementById('ratingNotes').value;
     
     if (!userId) {
-        showNotification('Выберите пользователя', 'error');
+        showNotification('❌ Выберите пользователя', 'error');
         return;
+    }
+    
+    // Если есть дефекты но нет фотографии, предупреждаем
+    if ((itemCondition === 'minor_defects' || itemCondition === 'major_defects') && uploadedDefectPhotos.length === 0) {
+        showNotification('⚠️ Для дефектов рекомендуется загрузить фотографию', 'warning');
     }
     
     const transactionData = {
@@ -4125,7 +4259,8 @@ function addRatingTransaction() {
         return_timing: returnTiming,
         item_condition: itemCondition,
         rule_compliance: ruleCompliance,
-        notes: notes
+        notes: notes,
+        defect_photos: uploadedDefectPhotos  // Добавляем информацию о фотографиях
     };
     
     fetch('/api/ratings/transaction', {
@@ -4138,25 +4273,27 @@ function addRatingTransaction() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            showNotification(data.message, 'success');
+            showNotification('✅ ' + data.message, 'success');
             
-            // Очищаем форму
+            // Очищаем форму и фотографии
             document.getElementById('ratingUserId').value = '';
             document.getElementById('ratingRentalId').value = '';
             document.getElementById('returnTiming').value = 'on_time';
             document.getElementById('itemCondition').value = 'perfect';
             document.getElementById('ruleCompliance').value = 'no_violations';
             document.getElementById('ratingNotes').value = '';
+            clearDefectPhoto();
+            updateDefectPhotoSection();
             
             // Обновляем таблицу рейтингов
             loadRatings();
         } else {
-            showNotification(data.error, 'error');
+            showNotification('❌ ' + data.error, 'error');
         }
     })
     .catch(error => {
         console.error('Ошибка добавления транзакции:', error);
-        showNotification('Ошибка добавления оценки', 'error');
+        showNotification('❌ Ошибка добавления оценки', 'error');
     });
 }
 
