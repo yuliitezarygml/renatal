@@ -4622,6 +4622,48 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// ==================== СОХРАНЕНИЕ АКТИВНОЙ ВКЛАДКИ ====================
+// Сохраняем активную вкладку в localStorage при клике на таб
+document.addEventListener('DOMContentLoaded', function() {
+    // Ключ для хранения в localStorage
+    const ACTIVE_TAB_KEY = 'adminPanelActiveTab';
+    
+    // Функция для сохранения активной вкладки
+    function saveActiveTab(tabId) {
+        localStorage.setItem(ACTIVE_TAB_KEY, tabId);
+    }
+    
+    // Функция для восстановления активной вкладки
+    function restoreActiveTab() {
+        const savedTabId = localStorage.getItem(ACTIVE_TAB_KEY);
+        
+        if (savedTabId) {
+            // Находим кнопку вкладки по ID
+            const tabButton = document.getElementById(savedTabId);
+            if (tabButton) {
+                // Используем Bootstrap метод для активации вкладки
+                const tab = new bootstrap.Tab(tabButton);
+                tab.show();
+            }
+        }
+    }
+    
+    // Добавляем слушатели на все кнопки вкладок
+    const tabButtons = document.querySelectorAll('.nav-tabs button[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(e) {
+            // Сохраняем ID активной вкладки
+            saveActiveTab(this.id);
+        });
+    });
+    
+    // Восстанавливаем вкладку при загрузке страницы (но не перезаписываем первоначальную активную)
+    // Это происходит через небольшую задержку, чтобы перезаписать начальную вкладку
+    setTimeout(function() {
+        restoreActiveTab();
+    }, 100);
+});
 </script>
 
 {% endblock %}
