@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2>📦 Форма возврата аренды</h2>
+            <p class="text-muted">Заполните все поля для регистрации возврата консоли</p>
+            
+            <div id="rental-info" class="alert alert-info" style="display: none;">
+                <p><strong>📅 Информация об аренде:</strong></p>
+                <p id="rental-details"></p>
+            </div>
+            
+            <form id="return-form" enctype="multipart/form-data">
+                <input type="hidden" id="rental_id" name="rental_id">
+                
+                <!-- 1. Состояние товара -->
+                <div class="mb-4">
+                    <label class="form-label">🎮 Состояние товара *</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="condition" id="excellent" value="excellent" required>
+                        <label class="btn btn-outline-success" for="excellent">✅ Отличное</label>
+                        
+                        <input type="radio" class="btn-check" name="condition" id="minor_defects" value="minor_defects">
+                        <label class="btn btn-outline-info" for="minor_defects">⚠️ Мелкие дефекты</label>
+                        
+                        <input type="radio" class="btn-check" name="condition" id="damaged" value="damaged">
+                        <label class="btn btn-outline-warning" for="damaged">⚠️ Повреждён</label>
+                        
+                        <input type="radio" class="btn-check" name="condition" id="lost" value="lost">
+                        <label class="btn btn-outline-danger" for="lost">❌ Утерян</label>
+                    </div>
+                    <small class="form-text text-muted">Выберите текущее состояние товара</small>
+                </div>
+                
+                <!-- 2. Комментарий администратора -->
+                <div class="mb-4">
+                    <label for="admin_comment" class="form-label">💬 Комментарий администратора</label>
+                    <textarea class="form-control" id="admin_comment" name="admin_comment" rows="3" 
+                              placeholder="Краткое описание дефектов, замечаний или особенностей возврата..."></textarea>
+                    <small class="form-text text-muted">Например: царапины на корпусе, не работает кнопка питания и т.д.</small>
+                </div>
+                
+                <!-- 3. Фотография возврата -->
+                <div class="mb-4">
+                    <label for="return_photos" class="form-label">📸 Фотография возврата</label>
+                    <div class="input-group">
+                        <input type="file" class="form-control" id="return_photos" name="return_photos" 
+                               accept="image/*" multiple>
+                        <label class="input-group-text" for="return_photos">Выбрать</label>
+                    </div>
+                    <small class="form-text text-muted">Загрузите одну или несколько фотографий текущего состояния товара</small>
+                    
+                    <!-- Превью фотографий -->
+                    <div id="photos-preview" class="mt-3">
+                        <!-- Фотографии будут добавлены здесь -->
+                    </div>
+                </div>
+                
+                <!-- 4. Дата возврата -->
+                <div class="mb-4">
+                    <label for="return_date" class="form-label">📅 Дата возврата *</label>
+                    <input type="datetime-local" class="form-control" id="return_date" name="return_date" required>
+                    <small class="form-text text-muted">Дата и время фактического возврата товара</small>
+                </div>
+                
+                <!-- 5. Подтверждение клиента -->
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="client_confirmed" name="client_confirmed">
+                        <label class="form-check-label" for="client_confirmed">
+                            ✓ <strong>Клиент подтвердил сдачу товара</strong>
+                        </label>
+                    </div>
+                    <small class="form-text text-muted">Отметьте, если клиент лично подтвердил возврат товара в хорошем состоянии</small>
+                </div>
+                
+                <!-- Подпись клиента (если офлайн) -->
+                <div class="mb-4" id="signature-section" style="display: none;">
+                    <label for="client_signature" class="form-label">✍️ Подпись клиента (офлайн)</label>
+                    <div id="signature-pad" style="border: 2px dashed #ccc; border-radius: 5px; cursor: crosshair; height: 200px;"></div>
+                    <canvas id="signatureCanvas" width="400" height="200" style="border: 2px dashed #ccc; border-radius: 5px; display: none;"></canvas>
+                    <input type="hidden" id="client_signature" name="client_signature">
+                    <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="clearSignature()">Очистить подпись</button>
+                </div>
+                
+                <!-- Кнопки -->
+                <div class="mb-4">
+                    <button type="submit" class="btn btn-primary btn-lg w-100">
+                        ✅ Зарегистрировать возврат
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Библиотека для рисования подписи -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
+<script>
+let signaturePad = null;
+let rentalId = new URLSearchParams(window.location.search).get('rental_id');
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Получаем ID аренды из URL или передаём как параметр
+    if (rentalId) {
+        document.getElementById('rental_id').value = rentalId;
+        loadRentalInfo(rentalId);
+    }
+    
+    // Устанавливаем текущую дату
+    const now = new Date();
+    const localDateTime = now.toISOString().slice(0, 16);
+    document.getElementById('return_date').value = localDateTime;
+    
+    // Инициализируем подпись
+    initializeSignature();
+    
+    // Показываем/скрываем раздел подписи при клике на чекбокс
+    document.getElementById('client_confirmed').addEventListener('change', function() {
+        document.getElementById('signature-section').style.display = 
+            this.checked ? 'block' : 'none';
+        if (this.checked && signaturePad) {
+            setTimeout(() => signaturePad.resizeCanvas(), 100);
+        }
+    });
+    
+    // Обработчик загрузки фотографий
+    document.getElementById('return_photos').addEventListener('change', handlePhotoUpload);
+    
+    // Отправка формы
+    document.getElementById('return-form').addEventListener('submit', submitReturnForm);
+});
+
+// Загрузить информацию об аренде
+function loadRentalInfo(rentalId) {
+    fetch(`/api/rental-info/${rentalId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.rental) {
+                const rental = data.rental;
+                document.getElementById('rental-details').innerHTML = `
+                    <strong>ID аренды:</strong> ${rental.rental_id}<br>
+                    <strong>Консоль:</strong> ${rental.console_id}<br>
+                    <strong>Клиент:</strong> ${rental.user_id}<br>
+                    <strong>Начало аренды:</strong> ${rental.start_date}<br>
+                    <strong>Конец аренды:</strong> ${rental.end_date}
+                `;
+                document.getElementById('rental-info').style.display = 'block';
+            }
+        })
+        .catch(error => console.error('Ошибка:', error));
+}
+
+// Инициализация подписи
+function initializeSignature() {
+    const canvas = document.getElementById('signatureCanvas');
+    if (canvas) {
+        signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgba(255,255,255,0)',
+            penColor: '#000000',
+            minWidth: 1,
+            maxWidth: 3,
+            velocityFilterWeight: 0.7,
+            minDistance: 5,
+            dotSize: 3,
+            throttle: 16,
+            minThickness: 1,
+            maxThickness: 2,
+            canvasContextOptions: {},
+            onBegin: () => {},
+            onEnd: () => {}
+        });
+    }
+}
+
+// Обработка загрузки фотографий
+function handlePhotoUpload(e) {
+    const files = e.target.files;
+    const preview = document.getElementById('photos-preview');
+    preview.innerHTML = '';
+    
+    if (files.length > 0) {
+        preview.innerHTML = '<p class="text-muted">📸 Загруженные фотографии:</p>';
+        
+        Array.from(files).forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '150px';
+                img.style.maxHeight = '150px';
+                img.style.margin = '5px';
+                img.style.borderRadius = '5px';
+                img.style.border = '1px solid #ddd';
+                
+                const div = document.createElement('div');
+                div.style.display = 'inline-block';
+                div.appendChild(img);
+                preview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+}
+
+// Очистить подпись
+function clearSignature() {
+    if (signaturePad) {
+        signaturePad.clear();
+    }
+}
+
+// Отправить форму возврата
+function submitReturnForm(e) {
+    e.preventDefault();
+    
+    const rentalId = document.getElementById('rental_id').value;
+    const condition = document.querySelector('input[name="condition"]:checked').value;
+    const adminComment = document.getElementById('admin_comment').value;
+    const returnDate = document.getElementById('return_date').value;
+    const clientConfirmed = document.getElementById('client_confirmed').checked;
+    
+    if (!rentalId || !condition || !returnDate) {
+        alert('❌ Заполните все обязательные поля (отмечены *)');
+        return;
+    }
+    
+    // Получить подпись если она нужна
+    let clientSignature = '';
+    if (clientConfirmed && signaturePad && !signaturePad.isEmpty()) {
+        clientSignature = signaturePad.toDataURL();
+    }
+    
+    // Подготовить данные для отправки
+    const formData = new FormData();
+    formData.append('rental_id', rentalId);
+    formData.append('condition', condition);
+    formData.append('admin_comment', adminComment);
+    formData.append('return_date', returnDate);
+    formData.append('client_confirmed', clientConfirmed);
+    formData.append('client_signature', clientSignature);
+    
+    // Добавить фотографии
+    const photosInput = document.getElementById('return_photos');
+    if (photosInput.files.length > 0) {
+        Array.from(photosInput.files).forEach((file, index) => {
+            formData.append(`return_photos`, file);
+        });
+    }
+    
+    // Отправить запрос
+    fetch('/api/return-rental', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('✅ Возврат успешно зарегистрирован!');
+            // Очистить форму или перенаправить
+            document.getElementById('return-form').reset();
+            setTimeout(() => {
+                window.location.href = '/admin';
+            }, 1500);
+        } else {
+            alert('❌ Ошибка: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('❌ Ошибка при отправке формы');
+    });
+}
+
+// Стили для фото превью
+const style = document.createElement('style');
+style.textContent = `
+    #photos-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .btn-group {
+        display: flex;
+    }
+    
+    .btn-group .btn-check + .btn {
+        flex: 1;
+    }
+    
+    canvas {
+        cursor: crosshair;
+        touch-action: none;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

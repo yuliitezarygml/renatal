@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>📊 Управление Рейтингами Пользователей</h2>
+    
+    <!-- Табы -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="rating-tab" data-bs-toggle="tab" href="#rating" role="tab">Новые Рейтинги</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="history-tab" data-bs-toggle="tab" href="#history" role="tab">История Рейтингов</a>
+        </li>
+    </ul>
+    
+    <!-- Содержимое табов -->
+    <div class="tab-content">
+        <!-- Таб 1: Завершенные аренды для рейтинга -->
+        <div id="rating" class="tab-pane fade show active" role="tabpanel">
+            <h4>⏳ Завершенные аренды без рейтинга</h4>
+            <p class="text-muted">Выберите параметры оценки для каждой аренды</p>
+            
+            <div id="rentals-list" class="row">
+                <!-- Аренды будут загружены здесь -->
+            </div>
+            
+            <div id="no-rentals" class="alert alert-info" style="display: none;">
+                ✅ Все аренды уже имеют рейтинги!
+            </div>
+        </div>
+        
+        <!-- Таб 2: История рейтингов -->
+        <div id="history" class="tab-pane fade" role="tabpanel">
+            <h4>📈 Все рейтинги пользователей</h4>
+            <p class="text-muted">Список пользователей и их текущих рейтингов</p>
+            
+            <table class="table table-striped" id="ratings-table">
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Рейтинг</th>
+                        <th>Статус</th>
+                        <th>Транзакций</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody id="ratings-tbody">
+                    <!-- Рейтинги будут загружены здесь -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления рейтинга -->
+<div class="modal fade" id="ratingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">✍️ Добавить Рейтинг</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rating-form">
+                    <input type="hidden" id="rental_id" name="rental_id">
+                    <input type="hidden" id="user_id" name="user_id">
+                    
+                    <!-- Информация об аренде -->
+                    <div class="alert alert-light" id="rental-info">
+                        <!-- Заполнится при открытии модали -->
+                    </div>
+                    
+                    <!-- Состояние консоли -->
+                    <div class="mb-3">
+                        <label class="form-label">🎮 Состояние консоли:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="console_condition" id="perfect" value="perfect" required>
+                            <label class="btn btn-outline-success" for="perfect">✅ Идеальное</label>
+                            
+                            <input type="radio" class="btn-check" name="console_condition" id="minor_damage" value="minor_damage">
+                            <label class="btn btn-outline-warning" for="minor_damage">⚠️ Небольшие повреждения</label>
+                            
+                            <input type="radio" class="btn-check" name="console_condition" id="major_damage" value="major_damage">
+                            <label class="btn btn-outline-danger" for="major_damage">❌ Серьезные повреждения</label>
+                            
+                            <input type="radio" class="btn-check" name="console_condition" id="lost" value="lost">
+                            <label class="btn btn-outline-dark" for="lost">🚫 Потеряна</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Соответствие правилам -->
+                    <div class="mb-3">
+                        <label class="form-label">📋 Соответствие правилам:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="rule_compliance" id="no_violations" value="no_violations" required>
+                            <label class="btn btn-outline-success" for="no_violations">✅ Без нарушений</label>
+                            
+                            <input type="radio" class="btn-check" name="rule_compliance" id="minor_violations" value="minor_violations">
+                            <label class="btn btn-outline-warning" for="minor_violations">⚠️ Небольшие</label>
+                            
+                            <input type="radio" class="btn-check" name="rule_compliance" id="major_violations" value="major_violations">
+                            <label class="btn btn-outline-danger" for="major_violations">❌ Серьезные</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Время возврата -->
+                    <div class="mb-3">
+                        <label class="form-label">⏰ Время возврата:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="return_timing" id="on_time" value="on_time" required>
+                            <label class="btn btn-outline-success" for="on_time">✅ Вовремя</label>
+                            
+                            <input type="radio" class="btn-check" name="return_timing" id="late_hours" value="late_hours">
+                            <label class="btn btn-outline-warning" for="late_hours">⚠️ На часы опоздал</label>
+                            
+                            <input type="radio" class="btn-check" name="return_timing" id="late_days" value="late_days">
+                            <label class="btn btn-outline-danger" for="late_days">❌ На дни опоздал</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Примечания администратора -->
+                    <div class="mb-3">
+                        <label class="form-label">📝 Примечания администратора:</label>
+                        <textarea class="form-control" name="admin_notes" rows="3" placeholder="Дополнительная информация..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="submitRating()">💾 Сохранить рейтинг</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для просмотра истории пользователя -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">📊 История рейтингов пользователя</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="history-content">
+                    <!-- Будет загружено через JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .rental-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .rental-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: box-shadow 0.2s;
+    }
+    
+    .rating-badge {
+        font-size: 1.2em;
+        font-weight: bold;
+        padding: 8px 12px;
+        border-radius: 20px;
+    }
+    
+    .rating-excellent {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .rating-good {
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+    
+    .rating-normal {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .rating-risky {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadCompletedRentals();
+    loadAllRatings();
+});
+
+// Загрузить завершенные аренды
+function loadCompletedRentals() {
+    fetch('/api/completed-rentals-for-rating')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.rentals.length > 0) {
+                const list = document.getElementById('rentals-list');
+                list.innerHTML = '';
+                
+                data.rentals.forEach(rental => {
+                    const card = document.createElement('div');
+                    card.className = 'col-md-6 rental-card';
+                    card.innerHTML = `
+                        <div class="rental-card">
+                            <h6>${rental.console_id}</h6>
+                            <p class="text-muted mb-2">
+                                📅 ${rental.start_date} → ${rental.end_date}
+                                <br/>
+                                👤 ${rental.user_id}
+                                <br/>
+                                💰 ${rental.price} руб.
+                            </p>
+                            <button class="btn btn-sm btn-primary" onclick="openRatingModal('${rental.rental_id}', '${rental.user_id}', '${rental.console_id}')">
+                                ✍️ Оценить
+                            </button>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+                
+                document.getElementById('no-rentals').style.display = 'none';
+            } else {
+                document.getElementById('no-rentals').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка при загрузке аренд');
+        });
+}
+
+// Загрузить все рейтинги
+function loadAllRatings() {
+    fetch('/api/user-ratings')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('ratings-tbody');
+                tbody.innerHTML = '';
+                
+                data.ratings.forEach(rating => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${rating.username}</td>
+                        <td>
+                            <span class="rating-badge ${getRatingClass(rating.rating)}">
+                                ⭐ ${rating.rating.toFixed(1)}
+                            </span>
+                        </td>
+                        <td>${getRatingDescription(rating.rating)}</td>
+                        <td>${rating.transaction_count}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewUserHistory('${rating.user_id}')">
+                                📊 История
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        })
+        .catch(error => console.error('Ошибка:', error));
+}
+
+// Открыть модаль для добавления рейтинга
+function openRatingModal(rentalId, userId, consoleId) {
+    document.getElementById('rental_id').value = rentalId;
+    document.getElementById('user_id').value = userId;
+    
+    const info = document.getElementById('rental-info');
+    info.innerHTML = `
+        <strong>Аренда:</strong> ${rentalId}<br/>
+        <strong>Пользователь:</strong> ${userId}<br/>
+        <strong>Консоль:</strong> ${consoleId}
+    `;
+    
+    // Очистить форму
+    document.getElementById('rating-form').reset();
+    
+    const modal = new bootstrap.Modal(document.getElementById('ratingModal'));
+    modal.show();
+}
+
+// Сохранить рейтинг
+function submitRating() {
+    const formData = new FormData(document.getElementById('rating-form'));
+    const data = {
+        rental_id: formData.get('rental_id'),
+        user_id: formData.get('user_id'),
+        console_condition: formData.get('console_condition'),
+        rule_compliance: formData.get('rule_compliance'),
+        return_timing: formData.get('return_timing'),
+        admin_notes: formData.get('admin_notes')
+    };
+    
+    fetch('/api/add-manual-rating', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            alert('✅ Рейтинг успешно добавлен!');
+            bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
+            loadCompletedRentals();
+            loadAllRatings();
+        } else {
+            alert('❌ Ошибка: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        alert('❌ Ошибка при сохранении рейтинга');
+    });
+}
+
+// Просмотреть историю пользователя
+function viewUserHistory(userId) {
+    fetch(`/api/user-rating-history/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let html = `<h6>${data.user_name} (ID: ${data.user_id})</h6>`;
+                html += `<p>Текущий рейтинг: <strong>${data.current_rating.rating?.toFixed(1) || 'N/A'}</strong></p>`;
+                html += `<p>Всего транзакций: <strong>${data.total_transactions}</strong></p>`;
+                
+                if (data.transactions && data.transactions.length > 0) {
+                    html += '<hr/><h6>Транзакции:</h6>';
+                    data.transactions.forEach(t => {
+                        html += `
+                            <div class="mb-3 p-2 border rounded">
+                                <p class="mb-1"><strong>Аренда:</strong> ${t.rental_id}</p>
+                                <p class="mb-1">🎮 Состояние: ${t.console_condition}</p>
+                                <p class="mb-1">📋 Правила: ${t.rule_compliance}</p>
+                                <p class="mb-1">⏰ Возврат: ${t.return_timing}</p>
+                                <p class="mb-1 text-muted">📝 Админ заметки: ${t.admin_notes || 'Нет'}</p>
+                                <p class="mb-0 text-muted small">📅 ${t.timestamp}</p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p class="text-muted">Нет транзакций</p>';
+                }
+                
+                document.getElementById('history-content').innerHTML = html;
+                const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+                modal.show();
+            }
+        })
+        .catch(error => console.error('Ошибка:', error));
+}
+
+// Функции помощника
+function getRatingClass(rating) {
+    if (rating >= 4.5) return 'rating-excellent';
+    if (rating >= 4.0) return 'rating-good';
+    if (rating >= 3.0) return 'rating-normal';
+    return 'rating-risky';
+}
+
+function getRatingDescription(rating) {
+    if (rating >= 4.5) return '⭐ Отличный';
+    if (rating >= 4.0) return '👍 Хороший';
+    if (rating >= 3.0) return '⚠️ Среднее';
+    return '❌ Проблемный';
+}
+</script>
+{% endblock %}

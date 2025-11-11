@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-gamepad"></i> PlayStation Аренда - Система управления</h4>
+            </div>
+            <div class="card-body text-center">
+                <h5>Добро пожаловать в админ панель!</h5>
+                <p class="text-muted">Управление консолями, пользователями и арендой PlayStation</p>
+                
+                {% if not current_user.is_authenticated %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Войти в админ панель
+                </a>
+                {% else %}
+                <a href="{{ url_for('admin') }}" class="btn btn-success">
+                    <i class="fas fa-cog"></i> Перейти к управлению
+                </a>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <h6>Функции системы:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-gamepad text-primary"></i> Управление консолями PlayStation</li>
+                        <li><i class="fas fa-users text-info"></i> Система пользователей через Telegram</li>
+                        <li><i class="fas fa-clock text-warning"></i> Аренда по времени</li>
+                        <li><i class="fas fa-shopping-cart text-success"></i> Продажа консолей</li>
+                        <li><i class="fas fa-ban text-danger"></i> Система банов</li>
+                        <li><i class="fas fa-chart-line text-secondary"></i> Статистика и отчеты</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
