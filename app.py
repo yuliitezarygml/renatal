@@ -10,7 +10,6 @@ import uuid
 from config import TELEGRAM_BOT_TOKEN, ADMIN_TELEGRAM_ID, SECRET_KEY
 from database import get_db_manager, init_db
 from rating_system import calculate_user_rating_manual
-from update_manager import init_update_manager, get_update_manager
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = SECRET_KEY
@@ -18,9 +17,6 @@ app.config['SECRET_KEY'] = SECRET_KEY
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-
-# Инициализируем менеджер обновлений
-init_update_manager()
 
 PASSPORT_DIR = 'passport'
 
@@ -2202,94 +2198,9 @@ def get_return_info(rental_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# ==================== API ОБНОВЛЕНИЙ ====================
+# ==================== ЗАПУСК ПРИЛОЖЕНИЯ ====================
 
-@app.route('/api/check-update', methods=['GET'])
-def check_update():
-    """Проверяет наличие обновлений"""
-    try:
-        update_manager = get_update_manager()
-        result = update_manager.check_for_updates()
-        return jsonify({
-            'success': True,
-            'update_available': result.get('update_available', False),
-            'current_version': result.get('current_version'),
-            'github_version': result.get('github_version'),
-            'changelog': result.get('changelog', ''),
-            'last_check': result.get('last_check')
-        })
-    except Exception as e:
-        print(f"❌ Ошибка при проверке обновлений: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/get-update-notification', methods=['GET'])
-def get_update_notification():
-    """Получить уведомление об обновлении для админ-панели"""
-    try:
-        update_manager = get_update_manager()
-        notification = update_manager.get_update_notification()
-        return jsonify({
-            'success': True,
-            'notification': notification
-        })
-    except Exception as e:
-        print(f"❌ Ошибка при получении уведомления: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/update-application', methods=['POST'])
-@login_required
-def update_application():
-    """Загружает обновления с GitHub и обновляет версию"""
-    try:
-        # Проверяем, что это администратор
-        if not current_user or not hasattr(current_user, 'is_admin') or not current_user.is_admin:
-            return jsonify({'success': False, 'message': 'Недостаточно прав'}), 403
-        
-        update_manager = get_update_manager()
-        
-        # Загружаем обновления
-        if update_manager.pull_from_github():
-            # Обновляем локальную версию
-            new_version = update_manager.version_data.get('github_version')
-            if new_version:
-                update_manager.update_local_version(new_version)
-            
-            return jsonify({
-                'success': True,
-                'message': 'Обновление успешно установлено',
-                'new_version': new_version,
-                'restart_required': True
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'message': 'Ошибка при загрузке обновлений'
-            }), 500
-    except Exception as e:
-        print(f"❌ Ошибка при обновлении приложения: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@app.route('/api/dismiss-update', methods=['POST'])
-def dismiss_update():
-    """Отклоняет уведомление об обновлении"""
-    try:
-        update_manager = get_update_manager()
-        # Просто отмечаем, что уведомление было отклонено
-        return jsonify({
-            'success': True,
-            'message': 'Уведомление отклонено'
-        })
-    except Exception as e:
-        print(f"❌ Ошибка при отклонении уведомления: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-# ==================== СТАРЫЕ МАРШРУТЫ (СОВМЕСТИМОСТЬ) ====================
-
-
+if __name__ == '__main__':
     print("🚀 Запуск сервера...")
     print("📦 Инициализация MongoDB...")
     

@@ -41,13 +41,6 @@
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
             crossorigin=""></script>
     
-    <!-- Система обновлений -->
-    <script>
-        // Проверяем, является ли пользователь администратором
-        const isAdmin = {% if current_user.is_authenticated and current_user.is_admin %}true{% else %}false{% endif %};
-    </script>
-    <script src="{{ url_for('static', filename='update-notifier.js') }}"></script>
-    
     {% block scripts %}{% endblock %}
 </body>
 </html>
