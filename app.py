@@ -407,7 +407,7 @@ def manage_rental_requests():
         if action == 'approve' and request_id in rental_requests:
             request_data = rental_requests[request_id]
             
-            if request_data['status'] == 'pending':
+            if request_data['status'] == 'pending_approval':
                 # Проверяем доступность консоли
                 consoles = load_json_file('consoles')
                 console_id = request_data['console_id']
@@ -1868,7 +1868,9 @@ def get_user_rentals(user_id):
                     'status': rental.get('status'),
                     'start_time': rental.get('start_time'),
                     'end_time': rental.get('end_time'),
-                    'total_cost': rental.get('total_cost', 0)
+                    'total_cost': rental.get('total_cost', 0),
+                    'rating_score': rental.get('rating_score', None),
+                    'location': rental.get('location', None)  # Добавляем геолокацию
                 }
                 user_rentals.append(rental_info)
         
@@ -1876,12 +1878,12 @@ def get_user_rentals(user_id):
         user_rentals.sort(key=lambda x: x.get('start_time', ''), reverse=True)
         
         return jsonify({
-            'success': True,
+            'status': 'success',
             'rentals': user_rentals
         })
         
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        return jsonify({'status': 'error', 'message': str(e)})
 
 @app.route('/api/ratings/history', methods=['GET'])
 @login_required

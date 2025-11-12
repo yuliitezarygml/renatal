@@ -1,6 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+<script>
+    // Текущий администратор
+    const currentAdmin = {
+        username: '{{ current_user.username if current_user else "admin" }}',
+        id: '{{ current_user.id if current_user else "admin" }}'
+    };
+</script>
 <style>
 .rental-timer {
     transition: background-color 0.3s ease;
@@ -155,8 +162,8 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="requests-tab" data-bs-toggle="tab" data-bs-target="#requests" type="button" role="tab">
                     <i class="fas fa-clipboard-list"></i> Заявки 
-                    {% if rental_requests.values() | selectattr('status', 'equalto', 'pending') | list | length > 0 %}
-                    <span class="badge bg-warning">{{ rental_requests.values() | selectattr('status', 'equalto', 'pending') | list | length }}</span>
+                    {% if rental_requests.values() | selectattr('status', 'equalto', 'pending_approval') | list | length > 0 %}
+                    <span class="badge bg-warning">{{ rental_requests.values() | selectattr('status', 'equalto', 'pending_approval') | list | length }}</span>
                     {% endif %}
                 </button>
             </li>
@@ -421,68 +428,74 @@
                                 <h5><i class="fas fa-clipboard-list"></i> Заявки на аренду</h5>
                             </div>
                             <div class="card-body">
-                                {% set pending_requests = rental_requests.values() | selectattr('status', 'equalto', 'pending') | list %}
-                                {% if pending_requests | length > 0 %}
-                                    <div class="table-responsive">
-                                        <table class="table table-striped">
-                                            <thead>
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>ID заявки</th>
+                                                <th>Пользователь</th>
+                                                <th>Консоль</th>
+                                                <th>Часов</th>
+                                                <th>Стоимость</th>
+                                                <th>Время заявки</th>
+                                                <th>Действия</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="requestsTableBody">
+                                            {% set pending_requests = rental_requests.values() | selectattr('status', 'equalto', 'pending_approval') | list %}
+                                            {% if pending_requests | length > 0 %}
+                                                {% for request_id, request in rental_requests.items() %}
+                                                    {% if request.status == 'pending_approval' %}
+                                                        {% set request_user = users.get(request.user_id, {}) %}
+                                                        {% set request_console = consoles.get(request.console_id, {}) %}
+                                                        <tr>
+                                                            <td><small>{{ request_id[:8] }}...</small></td>
+                                                            <td>
+                                                                <strong>{{ request_user.get('full_name', request_user.get('first_name', 'Неизвестный')) }}</strong><br>
+                                                                <small class="text-muted">
+                                                                    📱 {{ request_user.get('phone_number', 'Не указан') }}<br>
+                                                                    🆔 {{ request.user_id }}
+                                                                </small>
+                                                            </td>
+                                                            <td>
+                                                                <strong>{{ request_console.get('name', 'Неизвестная консоль') }}</strong><br>
+                                                                <small class="text-muted">
+                                                                    {{ request_console.get('model', '') }}<br>
+                                                                    💰 {{ request_console.get('rental_price', 0) }} лей/ч
+                                                                </small>
+                                                            </td>
+                                                            <td>{{ request.selected_hours or 0 }}</td>
+                                                            <td>{{ request.expected_cost or 0 }} лей</td>
+                                                            <td>
+                                                                <small>
+                                                                    {{ request.request_time[:16] if request.request_time else 'Не указано' }}<br>
+                                                                    <span class="text-muted">{{ request.request_time[:10] if request.request_time else '' }}</span>
+                                                                </small>
+                                                            </td>
+                                                            <td>
+                                                                <div class="btn-group" role="group">
+                                                                    <button class="btn btn-sm btn-success" onclick="approveRequest('{{ request_id }}')">
+                                                                        <i class="fas fa-check"></i> Одобрить
+                                                                    </button>
+                                                                    <button class="btn btn-sm btn-danger" onclick="rejectRequest('{{ request_id }}')">
+                                                                        <i class="fas fa-times"></i> Отклонить
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% else %}
                                                 <tr>
-                                            <th>ID заявки</th>
-                                            <th>Пользователь</th>
-                                            <th>Консоль</th>
-                                            <th>Время заявки</th>
-                                            <th>Действия</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for request_id, request in rental_requests.items() %}
-                                        {% if request.status == 'pending' %}
-                                        {% set request_user = users.get(request.user_id, {}) %}
-                                        {% set request_console = consoles.get(request.console_id, {}) %}
-                                        <tr>
-                                            <td><small>{{ request_id[:8] }}...</small></td>
-                                            <td>
-                                                <strong>{{ request_user.get('full_name', request_user.get('first_name', 'Неизвестный')) }}</strong><br>
-                                                <small class="text-muted">
-                                                    📱 {{ request_user.get('phone_number', 'Не указан') }}<br>
-                                                    🆔 {{ request.user_id }}
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <strong>{{ request_console.get('name', 'Неизвестная консоль') }}</strong><br>
-                                                <small class="text-muted">
-                                                    {{ request_console.get('model', '') }}<br>
-                                                    💰 {{ request_console.get('rental_price', 0) }} лей/ч
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <small>
-                                                    {{ request.request_time[:16] if request.request_time else 'Не указано' }}<br>
-                                                    <span class="text-muted">{{ request.request_time[:10] if request.request_time else '' }}</span>
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <button class="btn btn-sm btn-success" onclick="approveRequest('{{ request_id }}')">
-                                                        <i class="fas fa-check"></i> Одобрить
-                                                    </button>
-                                                    <button class="btn btn-sm btn-danger" onclick="rejectRequest('{{ request_id }}')">
-                                                        <i class="fas fa-times"></i> Отклонить
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        {% endif %}
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                                                    <td colspan="7" class="text-center text-muted py-4">
+                                                        <i class="fas fa-inbox"></i> Нет ожидающих заявок
+                                                    </td>
+                                                </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        {% else %}
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle"></i> Нет ожидающих заявок
-                            </div>
-                        {% endif %}
-                    </div>
                         </div>
                     </div>
 
@@ -586,7 +599,7 @@
                                         <th>Действия</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="usersTableBody">
                                     {% for user_id, user in users.items() %}
                                     <tr>
                                         <td><small>{{ user_id }}</small></td>
@@ -617,36 +630,20 @@
                                         <td>{{ user.rentals | length }}</td>
                                         <td>{{ user.total_spent or 0 }} лей</td>
                                         <td>
-                                            <div class="btn-group" role="group">
-                                                <button class="btn btn-sm btn-info view-user-btn" 
-                                                        data-user-id="{{ user_id }}"
-                                                        data-user-name="{{ user.full_name or user.first_name }}"
-                                                        data-user-phone="{{ user.phone_number or '' }}"
-                                                        data-user-username="{{ user.username or '' }}"
-                                                        data-user-joined="{{ user.joined_at }}"
-                                                        data-user-spent="{{ user.total_spent or 0 }}"
-                                                        data-user-rentals="{{ user.rentals | length }}">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-primary" onclick="viewUserDocuments('{{ user_id }}', '{{ user.full_name or user.first_name }}')" title="Просмотр документов">
-                                                    <i class="fas fa-id-card"></i>
-                                                </button>
-                                                <button class="btn btn-sm btn-warning" onclick="requestUserLocation('{{ user_id }}', '{{ user.full_name or user.first_name }}')" title="Запросить геолокацию">
-                                                    <i class="fas fa-map-marker-alt"></i>
-                                                </button>
-                                                {% if user.is_banned %}
-                                                <button class="btn btn-sm btn-success" onclick="unbanUser('{{ user_id }}')">
-                                                    <i class="fas fa-unlock"></i>
-                                                </button>
-                                                {% else %}
-                                                <button class="btn btn-sm btn-warning" onclick="banUser('{{ user_id }}')">
-                                                    <i class="fas fa-ban"></i>
-                                                </button>
-                                                {% endif %}
-                                                <button class="btn btn-sm btn-danger" onclick="deleteUser('{{ user_id }}', '{{ user.full_name or user.first_name }}')" title="Удалить пользователя">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
+                                            <button class="btn btn-sm btn-info user-profile-btn"
+                                                    data-user-id="{{ user_id }}"
+                                                    data-user-name="{{ user.full_name or user.first_name }}"
+                                                    data-user-phone="{{ user.phone_number or '' }}"
+                                                    data-user-username="{{ user.username or '' }}"
+                                                    data-user-joined="{{ user.joined_at }}"
+                                                    data-user-spent="{{ user.total_spent or 0 }}"
+                                                    data-user-rentals="{{ user.rentals | length }}"
+                                                    data-user-banned="{{ user.is_banned }}"
+                                                    data-user-status="{{ user.registration_step or 'completed' }}"
+                                                    data-user-email="{{ user.email or '' }}"
+                                                    style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                                Профиль
+                                            </button>
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -1535,7 +1532,7 @@
                                     </tr>
                                     <tr>
                                         <td><strong>Ожидающих заявок:</strong></td>
-                                        <td>{{ rental_requests.values() | selectattr('status', 'equalto', 'pending') | list | length }}</td>
+                                        <td>{{ rental_requests.values() | selectattr('status', 'equalto', 'pending_approval') | list | length }}</td>
                                     </tr>
                                 </table>
                                 
@@ -2095,53 +2092,76 @@ function rentConsoleByAdmin(consoleId) {
 }
 
 function approveRequest(requestId) {
-    if (confirm('Одобрить заявку на аренду?')) {
-        fetch('/api/rental-requests', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({action: 'approve', request_id: requestId})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert('Заявка одобрена! Аренда началась.\nID аренды: ' + data.rental_id);
-                location.reload();
-            } else {
-                alert('Ошибка: ' + (data.message || 'Не удалось одобрить заявку'));
-            }
-        })
-        .catch(error => {
-            alert('Ошибка при одобрении заявки');
-            console.error(error);
-        });
-    }
+    console.log('🟢 НАЖАТА КНОПКА ОДОБРИТЬ для заявки:', requestId);
+    
+    // Отправляем запрос СРАЗУ без confirm диалога
+    console.log(`⏳ Отправляем запрос на одобрение заявки ${requestId}...`);
+    fetch('/api/rental-requests', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({action: 'approve', request_id: requestId})
+    })
+    .then(response => {
+        console.log('📡 Ответ сервера получен, статус:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('✅ Данные получены:', data);
+        console.log('Проверяем data.status:', data.status);
+        console.log('Проверяем data.rental_id:', data.rental_id);
+        console.log('Проверяем data.message:', data.message);
+        
+        if (data.status === 'success') {
+            alert('✅ Заявка одобрена! Аренда началась.\nID аренды: ' + data.rental_id);
+            // Обновляем таблицу вместо перезагрузки
+            console.log('🔄 Обновляем таблицу...');
+            refreshRentalRequests();
+        } else {
+            alert('❌ Ошибка: ' + (data.message || 'Не удалось одобрить заявку'));
+        }
+    })
+    .catch(error => {
+        console.error('❌ Ошибка в fetch:', error);
+        alert('❌ Ошибка при одобрении заявки: ' + error.message);
+    });
 }
 
 function rejectRequest(requestId) {
-    if (confirm('Отклонить заявку на аренду?')) {
-        fetch('/api/rental-requests', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({action: 'reject', request_id: requestId})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert('Заявка отклонена');
-                location.reload();
-            } else {
-                alert('Ошибка при отклонении заявки');
-            }
-        })
-        .catch(error => {
-            alert('Ошибка при отклонении заявки');
-            console.error(error);
-        });
-    }
+    console.log('🔴 НАЖАТА КНОПКА ОТКЛОНИТЬ для заявки:', requestId);
+    
+    // Отправляем запрос СРАЗУ без confirm диалога
+    console.log(`⏳ Отправляем запрос на отклонение заявки ${requestId}...`);
+    fetch('/api/rental-requests', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({action: 'reject', request_id: requestId})
+    })
+    .then(response => {
+        console.log('📡 Ответ сервера получен, статус:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('✅ Данные получены:', data);
+        console.log('Проверяем data.status:', data.status);
+        console.log('Проверяем data.message:', data.message);
+        
+        if (data.status === 'success') {
+            alert('✅ Заявка отклонена');
+            // Обновляем таблицу вместо перезагрузки
+            console.log('🔄 Обновляем таблицу...');
+            refreshRentalRequests();
+        } else {
+            alert('❌ Ошибка при отклонении заявки: ' + (data.message || 'Неизвестная ошибка'));
+        }
+    })
+    .catch(error => {
+        console.error('❌ Ошибка в fetch:', error);
+        alert('❌ Ошибка при отклонении заявки: ' + error.message);
+    });
 }
 
 function saveAdminSettings() {
@@ -2304,7 +2324,230 @@ function deleteAdmin(username) {
     }
 }
 
-// Загружаем список администраторов при загрузке страницы
+// ==================== ПОЛНОЭКРАННЫЙ ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ====================
+
+// Переменные для хранения данных профиля
+let currentProfileUserId = null;
+
+function openUserProfileFullscreen() {
+    // Функция вызывается из обработчика событий ниже
+}
+
+function viewUserDocumentsFromProfile() {
+    if (currentProfileUserId) {
+        const userName = document.getElementById('profileUserName').textContent;
+        viewUserDocuments(currentProfileUserId, userName);
+    }
+}
+
+function requestUserLocationFromProfile() {
+    if (currentProfileUserId) {
+        const userName = document.getElementById('profileUserName').textContent;
+        requestUserLocation(currentProfileUserId, userName);
+    }
+}
+
+function banUserFromProfile() {
+    if (currentProfileUserId) {
+        if (confirm('Блокировать этого пользователя? Он не сможет арендовать консоли.')) {
+            banUser(currentProfileUserId);
+        }
+    }
+}
+
+function deleteUserFromProfile() {
+    if (currentProfileUserId) {
+        const userName = document.getElementById('profileUserName').textContent;
+        deleteUser(currentProfileUserId, userName);
+    }
+}
+
+function updateUserProfileModal(userId, userName, userPhone, userUsername, userJoined, userSpent, userRentals, userBanned, userStatus, userEmail) {
+    // Сохраняем ID пользователя для использования в функциях выше
+    currentProfileUserId = userId;
+    
+    // Основная информация
+    document.getElementById('profileUserName').textContent = userName || '—';
+    document.getElementById('profileUserId').textContent = userId || '—';
+    document.getElementById('profileJoined').textContent = userJoined ? userJoined.substring(0, 10) : '—';
+    document.getElementById('profileRentalsCount').textContent = userRentals || '0';
+    document.getElementById('profileTotalSpent').textContent = (userSpent || 0) + ' лей';
+    
+    // Рассчитываем среднюю аренду
+    const rentalsCount = parseInt(userRentals) || 0;
+    const avgSpent = rentalsCount > 0 ? Math.round(userSpent / rentalsCount) : 0;
+    document.getElementById('profileAvgRental').textContent = avgSpent + ' лей';
+    
+    // Статус
+    const statusBadge = document.getElementById('profileStatus');
+    if (userBanned === 'True' || userBanned === true) {
+        statusBadge.textContent = 'Заблокирован';
+        statusBadge.className = 'badge bg-danger';
+    } else if (userStatus !== 'completed') {
+        statusBadge.textContent = 'Неполная регистрация';
+        statusBadge.className = 'badge bg-warning';
+    } else {
+        statusBadge.textContent = 'Активен';
+        statusBadge.className = 'badge bg-success';
+    }
+    
+    // Контактная информация
+    if (userPhone && userPhone !== 'None' && userPhone !== '') {
+        document.getElementById('profilePhone').href = 'tel:' + userPhone;
+        document.getElementById('profilePhone').innerHTML = '<i class="fas fa-phone"></i> ' + userPhone;
+        document.getElementById('profileCallBtn').style.display = 'block';
+    } else {
+        document.getElementById('profilePhone').innerHTML = '<i class="fas fa-phone"></i> —';
+        document.getElementById('profileCallBtn').style.display = 'none';
+    }
+    
+    if (userUsername && userUsername !== 'None' && userUsername !== '') {
+        const telegramUrl = 'https://t.me/' + userUsername;
+        document.getElementById('profileTelegram').href = telegramUrl;
+        document.getElementById('profileTelegram').innerHTML = '<i class="fab fa-telegram"></i> @' + userUsername;
+        document.getElementById('profileTelegramBtn').onclick = function() { window.open(telegramUrl, '_blank'); };
+        document.getElementById('profileTelegramBtn').style.display = 'block';
+    } else {
+        document.getElementById('profileTelegram').innerHTML = '<i class="fab fa-telegram"></i> @—';
+        document.getElementById('profileTelegramBtn').style.display = 'none';
+    }
+    
+    if (userEmail && userEmail !== 'None' && userEmail !== '') {
+        document.getElementById('profileEmail').href = 'mailto:' + userEmail;
+        document.getElementById('profileEmail').innerHTML = '<i class="fas fa-envelope"></i> ' + userEmail;
+    } else {
+        document.getElementById('profileEmail').innerHTML = '<i class="fas fa-envelope"></i> <span class="text-muted">Не указан</span>';
+        document.getElementById('profileEmail').href = '#';
+        document.getElementById('profileEmail').style.pointerEvents = 'none';
+    }
+    
+    // Обновляем кнопку бана
+    const banBtn = document.getElementById('profileBanBtn');
+    if (userBanned === 'True' || userBanned === true) {
+        banBtn.textContent = '✓ Разблокировать';
+        banBtn.className = 'btn btn-success';
+        banBtn.onclick = function() { 
+            if (confirm('Разблокировать этого пользователя?')) {
+                unbanUser(currentProfileUserId);
+            }
+        };
+    } else {
+        banBtn.textContent = 'Заблокировать';
+        banBtn.className = 'btn btn-warning';
+        banBtn.onclick = function() {
+            if (confirm('Блокировать этого пользователя?')) {
+                banUser(currentProfileUserId);
+            }
+        };
+    }
+    
+    // Загружаем историю аренд
+    loadUserRentalsHistory(userId);
+    
+    // Показываем модальное окно
+    const modal = new bootstrap.Modal(document.getElementById('userProfileFullscreenModal'));
+    modal.show();
+}
+
+function loadUserRentalsHistory(userId) {
+    const container = document.getElementById('profileRentalsHistory');
+    const locationContainer = document.getElementById('profileUserLocation');
+    
+    fetch(`/api/user-rentals/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' && data.rentals && data.rentals.length > 0) {
+                // Ищем последнее известное местоположение
+                let lastLocation = null;
+                let lastLocationRental = null;
+                for (let rental of data.rentals) {
+                    if (rental.location && rental.location.latitude && rental.location.longitude) {
+                        lastLocation = rental.location;
+                        lastLocationRental = rental;
+                        break; // Берем самое последнее
+                    }
+                }
+                
+                // Показываем локацию если она есть
+                if (lastLocation && lastLocationRental) {
+                    const lat = parseFloat(lastLocation.latitude);
+                    const lon = parseFloat(lastLocation.longitude);
+                    const startTime = lastLocationRental.start_time ? lastLocationRental.start_time.substring(0, 10) : 'неизвестно';
+                    
+                    locationContainer.innerHTML = `
+                        <div class="alert alert-success">
+                            <h6 class="mb-3">📍 <strong>Последняя геолокация</strong></h6>
+                            <p class="mb-2"><strong>Консоль:</strong> ${lastLocationRental.console_name}</p>
+                            <p class="mb-2"><strong>Дата аренды:</strong> ${startTime}</p>
+                            <p class="mb-3"><strong>Координаты:</strong> <code>${lat.toFixed(6)}, ${lon.toFixed(6)}</code></p>
+                            <button class="btn btn-primary btn-sm" onclick="showLocationFromProfile(${lat}, ${lon}, 'Последнее местоположение пользователя - ${lastLocationRental.console_name}')">
+                                <i class="fas fa-map"></i> Открыть на карте
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    locationContainer.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-map-marker-alt"></i> Геолокация недоступна - пользователь еще не отправил свое местоположение во время аренды
+                        </div>
+                    `;
+                }
+                
+                // Загружаем историю аренд
+                let html = '<div class="table-responsive"><table class="table table-sm table-hover"><thead><tr><th>ID аренды</th><th>Консоль</th><th>Начало</th><th>Конец</th><th>Стоимость</th><th>Рейтинг</th><th>Геолокация</th></tr></thead><tbody>';
+                
+                data.rentals.forEach(rental => {
+                    const startTime = rental.start_time ? rental.start_time.substring(0, 16).replace('T', ' ') : '—';
+                    const endTime = rental.end_time ? rental.end_time.substring(0, 16).replace('T', ' ') : '—';
+                    const rating = rental.rating_score ? `⭐ ${parseFloat(rental.rating_score).toFixed(1)}` : 'Не оценена';
+                    
+                    let locationBtn = '—';
+                    if (rental.location && rental.location.latitude && rental.location.longitude) {
+                        const lat = parseFloat(rental.location.latitude);
+                        const lon = parseFloat(rental.location.longitude);
+                        locationBtn = `<button class="btn btn-sm btn-success" onclick="showLocationFromProfile(${lat}, ${lon}, '${rental.console_name}')">
+                            <i class="fas fa-map-marker-alt"></i> Показать
+                        </button>`;
+                    }
+                    
+                    html += `<tr>
+                        <td><small>${rental.id.substring(0, 8)}...</small></td>
+                        <td>${rental.console_name || 'Неизвестно'}</td>
+                        <td><small>${startTime}</small></td>
+                        <td><small>${endTime}</small></td>
+                        <td><strong>${rental.total_cost || 0} лей</strong></td>
+                        <td><span class="badge ${rental.rating_score >= 4 ? 'bg-success' : rental.rating_score >= 3 ? 'bg-warning' : 'bg-danger'}">${rating}</span></td>
+                        <td>${locationBtn}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+            } else {
+                locationContainer.innerHTML = `
+                    <div class="alert alert-secondary">
+                        <i class="fas fa-inbox"></i> У пользователя еще нет истории аренд
+                    </div>
+                `;
+                container.innerHTML = '<p class="text-muted"><i class="fas fa-inbox"></i> История аренд пуста</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка загрузки истории:', error);
+            locationContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Ошибка загрузки геолокации
+                </div>
+            `;
+            container.innerHTML = '<p class="text-muted"><i class="fas fa-inbox"></i> Ошибка загрузки истории аренд</p>';
+        });
+}
+
+function showLocationFromProfile(latitude, longitude, consoleName) {
+    showLocationOnMap(latitude, longitude, consoleName);
+}
+
+// Обработчик кликов на кнопки профиля пользователя
 document.addEventListener('DOMContentLoaded', function() {
     // Проверяем, находимся ли мы на вкладке настроек
     const settingsTab = document.getElementById('settings-tab');
@@ -2335,7 +2578,28 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Discounts table found, attempting to load...');
         setTimeout(loadDiscounts, 200);
     }
+
+    // Кнопки профиля пользователя
+    const profileButtons = document.querySelectorAll('.user-profile-btn');
+    profileButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const userName = this.getAttribute('data-user-name');
+            const userPhone = this.getAttribute('data-user-phone');
+            const userUsername = this.getAttribute('data-user-username');
+            const userJoined = this.getAttribute('data-user-joined');
+            const userSpent = this.getAttribute('data-user-spent');
+            const userRentals = this.getAttribute('data-user-rentals');
+            const userBanned = this.getAttribute('data-user-banned');
+            const userStatus = this.getAttribute('data-user-status');
+            const userEmail = this.getAttribute('data-user-email');
+            
+            updateUserProfileModal(userId, userName, userPhone, userUsername, userJoined, userSpent, userRentals, userBanned, userStatus, userEmail);
+        });
+    });
 });
+
+// ==================== КОНЕЦ ПОЛНОЭКРАННОГО ПРОФИЛЯ ====================
 
 // Глобальная переменная для хранения экземпляра карты
 let currentMap = null;
@@ -2797,6 +3061,258 @@ function stopAllRentalTimers() {
         stopRentalTimer(rentalId);
     });
 }
+
+// ==================== АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ДАННЫХ ====================
+
+let autoRefreshInterval = null;
+const AUTO_REFRESH_INTERVAL = 3000; // Обновляем каждые 3 секунды
+
+function startAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    
+    // Сразу загружаем данные при старте
+    refreshRentalRequests();
+    refreshConsoles();
+    refreshUsers();
+    
+    autoRefreshInterval = setInterval(function() {
+        // Загружаем ВСЕ данные независимо от активной вкладки
+        // Это позволяет видеть новые заявки, даже если вкладка не активна
+        refreshRentalRequests();
+        refreshConsoles();
+        refreshUsers();
+    }, AUTO_REFRESH_INTERVAL);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+function refreshRentalRequests() {
+    console.log('🔄 refreshRentalRequests: загружаем данные...');
+    
+    // Загружаем и заявки, и консоли одновременно
+    Promise.all([
+        fetch('/api/rental-requests').then(r => r.json()),
+        fetch('/api/consoles').then(r => r.json())
+    ])
+    .then(([requestsData, consolesData]) => {
+        console.log('📥 Полученные заявки:', requestsData);
+        console.log('📥 Полученные консоли:', consolesData);
+        updateRentalRequestsTable(requestsData, consolesData);
+    })
+    .catch(error => console.error('❌ Ошибка обновления заявок:', error));
+}
+
+function updateRentalRequestsTable(data, consodesData = {}) {
+    console.log('📝 updateRentalRequestsTable: попытка обновить таблицу...');
+    
+    // Теперь tbody ВСЕГДА присутствует в DOM, поэтому просто ищем по ID
+    let tbody = document.getElementById('requestsTableBody');
+    
+    if (!tbody) {
+        console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: tbody с ID requestsTableBody не найден!');
+        console.error('Это не должно происходить - проверьте HTML структуру');
+        return;
+    }
+    
+    console.log('✅ tbody найден, обновляем содержимое...');
+    let html = '';
+    let pendingCount = 0;
+    
+    // DEBUG: логируем ВСЕ заявки и их статусы
+    console.log('🔍 Анализируем статусы заявок:');
+    Object.entries(data).forEach(([request_id, request]) => {
+        console.log(`  - ${request_id.substring(0, 8)}: статус="${request.status}"`);
+    });
+    
+    Object.entries(data).forEach(([request_id, request]) => {
+        if (request.status === 'pending_approval') {
+            pendingCount++;
+            const user = request.user_id;
+            
+            // Получаем имя консоли из загруженных данных
+            let console_name = 'Неизвестная консоль';
+            if (consodesData && consodesData[request.console_id]) {
+                console_name = consodesData[request.console_id].name;
+            }
+            
+            const requested_at = request.request_time ? request.request_time.substring(0, 16) : (request.requested_at ? request.requested_at.substring(0, 10) : '—');
+            const selected_hours = request.selected_hours || 0;
+            const expected_cost = request.expected_cost || 0;
+            
+            html += `<tr>
+                <td><small>${request_id.substring(0, 8)}...</small></td>
+                <td>${user}</td>
+                <td>${console_name}</td>
+                <td>${selected_hours}</td>
+                <td>${expected_cost} лей</td>
+                <td><small>${requested_at}</small></td>
+                <td>
+                    <button class="btn btn-sm btn-success" onclick="approveRequest('${request_id}');" type="button">
+                        <i class="fas fa-check"></i> Одобрить
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="rejectRequest('${request_id}');" type="button">
+                        <i class="fas fa-times"></i> Отклонить
+                    </button>
+                </td>
+            </tr>`;
+        }
+    });
+    
+    if (html === '') {
+        html = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="fas fa-inbox"></i> Нет ожидающих заявок</td></tr>';
+    }
+    
+    tbody.innerHTML = html;
+    console.log(`✅ Таблица обновлена: ${pendingCount} заявок`);
+    
+    // Обновляем бейдж на вкладке
+    const badge = document.querySelector('#requests-tab .badge');
+    if (badge) {
+        badge.textContent = pendingCount;
+        badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+        console.log(`✅ Бейдж обновлён: ${pendingCount}`);
+    }
+}
+
+function refreshConsoles() {
+    fetch('/api/consoles')
+        .then(response => response.json())
+        .then(data => {
+            updateConsolesTable(data);
+        })
+        .catch(error => console.error('Ошибка обновления консолей:', error));
+}
+
+function updateConsolesTable(data) {
+    const tbody = document.getElementById('consolesTable');
+    if (!tbody) return;
+    
+    let html = '';
+    
+    Object.entries(data).forEach(([console_id, console]) => {
+        const status = console.status === 'available' ? 
+            '<span class="badge bg-success"><i class="fas fa-check"></i> Свободна</span>' : 
+            '<span class="badge bg-warning"><i class="fas fa-clock"></i> Арендована</span>';
+        
+        const games = console.games ? console.games.slice(0, 3).join(', ') : '';
+        
+        html += `<tr class="${console.status === 'rented' ? 'table-warning' : ''}">
+            <td><small>${console_id.substring(0, 8)}...</small></td>
+            <td>${console.name}</td>
+            <td>${console.model}</td>
+            <td><small>${games}${console.games && console.games.length > 3 ? ` (+${console.games.length - 3})` : ''}</small></td>
+            <td>${console.rental_price} лей/ч</td>
+            <td>${status}</td>
+            <td colspan="4">
+                <button class="btn btn-sm btn-primary" onclick="editConsole('${console_id}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteConsole('${console_id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function refreshUsers() {
+    fetch('/api/users')
+        .then(response => response.json())
+        .then(data => {
+            if (data.users) {
+                updateUsersTable(data.users);
+            }
+        })
+        .catch(error => console.error('Ошибка обновления пользователей:', error));
+}
+
+function updateUsersTable(data) {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+    
+    let html = '';
+    
+    Object.entries(data).forEach(([user_id, user]) => {
+        const status = user.is_banned ? 
+            '<span class="badge bg-danger">Заблокирован</span>' : 
+            (user.registration_step !== 'completed' ? 
+                '<span class="badge bg-warning">Неполная регистрация</span>' : 
+                '<span class="badge bg-success">Активен</span>');
+        
+        html += `<tr>
+            <td><small>${user_id}</small></td>
+            <td><strong>${user.full_name || user.first_name}</strong></td>
+            <td>@${user.username || 'Нет username'}</td>
+            <td>${user.phone_number || 'Не указан'}</td>
+            <td>${status}</td>
+            <td>${user.joined_at ? user.joined_at.substring(0, 10) : 'Не указано'}</td>
+            <td>${(user.rentals && user.rentals.length) || 0}</td>
+            <td>${user.total_spent || 0} лей</td>
+            <td>
+                <button class="btn btn-sm btn-info user-profile-btn"
+                        data-user-id="${user_id}"
+                        data-user-name="${user.full_name || user.first_name}"
+                        data-user-phone="${user.phone_number || ''}"
+                        data-user-username="${user.username || ''}"
+                        data-user-joined="${user.joined_at}"
+                        data-user-spent="${user.total_spent || 0}"
+                        data-user-rentals="${(user.rentals && user.rentals.length) || 0}"
+                        data-user-banned="${user.is_banned}"
+                        data-user-status="${user.registration_step || 'completed'}"
+                        data-user-email="${user.email || ''}"
+                        style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                    Профиль
+                </button>
+            </td>
+        </tr>`;
+    });
+    
+    tbody.innerHTML = html;
+    
+    // Переприсваиваем обработчики кнопок профиля
+    attachProfileButtonHandlers();
+}
+
+function attachProfileButtonHandlers() {
+    const profileButtons = document.querySelectorAll('.user-profile-btn');
+    profileButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.getAttribute('data-user-id');
+            const userName = this.getAttribute('data-user-name');
+            const userPhone = this.getAttribute('data-user-phone');
+            const userUsername = this.getAttribute('data-user-username');
+            const userJoined = this.getAttribute('data-user-joined');
+            const userSpent = this.getAttribute('data-user-spent');
+            const userRentals = this.getAttribute('data-user-rentals');
+            const userBanned = this.getAttribute('data-user-banned');
+            const userStatus = this.getAttribute('data-user-status');
+            const userEmail = this.getAttribute('data-user-email');
+            
+            updateUserProfileModal(userId, userName, userPhone, userUsername, userJoined, userSpent, userRentals, userBanned, userStatus, userEmail);
+        });
+    });
+}
+
+// Запускаем автообновление при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    startAutoRefresh();
+});
+
+// Останавливаем автообновление при выходе со страницы
+window.addEventListener('beforeunload', function() {
+    stopAutoRefresh();
+});
+
+// ==================== КОНЕЦ АВТОМАТИЧЕСКОГО ОБНОВЛЕНИЯ ====================
 </script>
 
 <!-- Модальное окно для просмотра документов -->
@@ -5065,6 +5581,8 @@ function loadMyDefectReports() {
                             ${severityIcon} ${report.category}
                         </h6>
                         <small>📍 ${report.location}</small>
+                        <br>
+                        <small style="opacity: 0.9; margin-top: 5px; display: inline-block;">👤 <strong>${report.admin_name || 'Администратор'}</strong></small>
                     </div>
                     <div style="text-align: right;">
                         <div style="font-size: 0.9rem;">📅 ${report.timestamp}</div>
@@ -5491,6 +6009,8 @@ async function saveDefectPhotosAndDescription() {
             severity: severity,
             notes: notes,
             timestamp: new Date().toLocaleString('ru-RU'),
+            admin_name: currentAdmin.username, // Имя администратора
+            admin_id: currentAdmin.id, // ID администратора
             photos: uploadedDefectPhotos.slice(-fullscreenUploadedPhotos.length) // Последние загруженные фото
         };
         
@@ -5811,21 +6331,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
-    // Кнопки просмотра пользователя
-    const viewUserButtons = document.querySelectorAll('.view-user-btn');
-    viewUserButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const userId = this.getAttribute('data-user-id');
-            const userName = this.getAttribute('data-user-name');
-            const userPhone = this.getAttribute('data-user-phone');
-            const userUsername = this.getAttribute('data-user-username');
-            const userJoined = this.getAttribute('data-user-joined');
-            const userSpent = this.getAttribute('data-user-spent');
-            const userRentals = this.getAttribute('data-user-rentals');
-            viewUser(userId, userName, userPhone, userUsername, userJoined, userSpent, userRentals);
-        });
-    });
 });
 
 // ==================== СОХРАНЕНИЕ АКТИВНОЙ ВКЛАДКИ ====================
@@ -5981,6 +6486,204 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button type="button" class="btn btn-success btn-lg" onclick="saveDefectPhotosAndDescription()">
                                 <i class="fas fa-save"></i> Сохранить дефект
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ПОЛНОЭКРАННЫЙ МОДАЛ ПРОФИЛЯ ПОЛЬЗОВАТЕЛЯ -->
+<div class="modal fade" id="userProfileFullscreenModal" tabindex="-1" style="--bs-modal-bg: #f8f9fa;">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-circle"></i> Профиль пользователя
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-5">
+                <div class="container-fluid">
+                    <!-- Основная информация -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light border-0">
+                                    <h5 class="mb-0"><i class="fas fa-id-card"></i> Основная информация</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3">
+                                            <div class="text-center">
+                                                <div class="rounded-circle bg-info text-white d-inline-flex align-items-center justify-content-center" style="width: 100px; height: 100px; font-size: 2.5rem;">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-9">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label text-muted small"><strong>Полное имя</strong></label>
+                                                    <p class="h5 mb-0" id="profileUserName">—</p>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label text-muted small"><strong>Telegram</strong></label>
+                                                    <p class="mb-0">
+                                                        <a id="profileTelegram" href="#" target="_blank" class="text-primary">
+                                                            <i class="fab fa-telegram"></i> @—
+                                                        </a>
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label text-muted small"><strong>Телефон</strong></label>
+                                                    <p class="mb-0">
+                                                        <a id="profilePhone" href="tel:" class="text-success">
+                                                            <i class="fas fa-phone"></i> —
+                                                        </a>
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label text-muted small"><strong>Email</strong></label>
+                                                    <p class="mb-0">
+                                                        <a id="profileEmail" href="mailto:" class="text-primary">
+                                                            <i class="fas fa-envelope"></i> —
+                                                        </a>
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label text-muted small"><strong>ID пользователя</strong></label>
+                                                    <p class="mb-0 font-monospace small">
+                                                        <code id="profileUserId">—</code>
+                                                    </p>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <label class="form-label text-muted small"><strong>Статус</strong></label>
+                                                    <p class="mb-0">
+                                                        <span id="profileStatus" class="badge bg-success">Активен</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Статистика -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-center border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted small mb-2">Дата регистрации</h6>
+                                    <h5 class="mb-0" id="profileJoined">—</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted small mb-2">Всего аренд</h6>
+                                    <h5 class="mb-0" id="profileRentalsCount">—</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted small mb-2">Потрачено</h6>
+                                    <h5 class="mb-0 text-success" id="profileTotalSpent">—</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="text-muted small mb-2">Средняя аренда</h6>
+                                    <h5 class="mb-0" id="profileAvgRental">—</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Действия и управление -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light border-0">
+                                    <h5 class="mb-0"><i class="fas fa-cog"></i> Управление пользователем</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row g-2">
+                                        <div class="col-md-auto">
+                                            <button class="btn btn-primary" id="profileDocumentsBtn" onclick="viewUserDocumentsFromProfile()">
+                                                <i class="fas fa-id-card"></i> Документы
+                                            </button>
+                                        </div>
+                                        <div class="col-md-auto">
+                                            <button class="btn btn-warning" id="profileLocationBtn" onclick="requestUserLocationFromProfile()">
+                                                <i class="fas fa-map-marker-alt"></i> Запросить геолокацию
+                                            </button>
+                                        </div>
+                                        <div class="col-md-auto">
+                                            <button class="btn btn-secondary" id="profileCallBtn" onclick="window.location.href='tel:'; return false;">
+                                                <i class="fas fa-phone"></i> Позвонить
+                                            </button>
+                                        </div>
+                                        <div class="col-md-auto">
+                                            <button class="btn btn-secondary" id="profileTelegramBtn" onclick="window.open('https://t.me/', '_blank');">
+                                                <i class="fab fa-telegram"></i> Telegram
+                                            </button>
+                                        </div>
+                                        <div class="col-md-auto">
+                                            <button class="btn btn-warning" id="profileBanBtn" onclick="banUserFromProfile()">
+                                                <i class="fas fa-ban"></i> Заблокировать
+                                            </button>
+                                        </div>
+                                        <div class="col-md-auto">
+                                            <button class="btn btn-danger" onclick="deleteUserFromProfile()">
+                                                <i class="fas fa-trash"></i> Удалить
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Геолокация пользователя -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light border-0">
+                                    <h5 class="mb-0"><i class="fas fa-map-marker-alt"></i> Последнее известное местоположение</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="profileUserLocation">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle"></i> Загрузка данных геолокации...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- История аренд -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light border-0">
+                                    <h5 class="mb-0"><i class="fas fa-history"></i> История аренд</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="profileRentalsHistory">
+                                        <p class="text-muted">Загрузка истории...</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
